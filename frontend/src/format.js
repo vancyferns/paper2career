@@ -31,3 +31,18 @@ export function listingStatus(job) {
 }
 
 export const UNKNOWN = 'Not stated in ad';
+
+/** Normalize a phone number to standard digits with 91 country code for WhatsApp */
+export function cleanPhone(phone) {
+  if (!phone) return '';
+  const digits = String(phone).replace(/\D/g, '');
+  if (digits.length === 10) return `91${digits}`;
+  if (digits.length === 12 && digits.startsWith('91')) return digits;
+  return digits;
+}
+
+/** URL for one-tap native phone calling */
+export function phoneDialUrl(phone) {
+  if (!phone) return '#';
+  return `tel:${String(phone).replace(/\s+/g, '')}`;
+}

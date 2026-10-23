@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { getJob, listAppearances } from '../api.js';
-import { fmtDate, listingStatus, UNKNOWN } from '../format.js';
+import { fmtDate, listingStatus, cleanPhone, phoneDialUrl, UNKNOWN } from '../format.js';
 import AdCrop from '../components/AdCrop.jsx';
 
 export default function JobDetail({ id }) {
@@ -43,6 +43,44 @@ export default function JobDetail({ id }) {
         </div>
       )}
 
+      {((job.contact_phones && job.contact_phones.length > 0) || (job.contact_emails && job.contact_emails.length > 0)) && (
+        <section className="card contact-action-card">
+          <h2>Direct Contact & Application</h2>
+          <p className="contact-action-hint">Reach out to this employer directly via phone, WhatsApp, or email:</p>
+          <div className="contact-btn-row">
+            {job.contact_phones?.map((phone) => {
+              const clean = cleanPhone(phone);
+              return (
+                <div key={phone} className="phone-btn-group">
+                  <a href={phoneDialUrl(phone)} className="btn-direct btn-direct-call">
+                    ?? Call {phone}
+                  </a>
+                  {clean.length === 12 && (
+                    <a
+                      href={`https://wa.me/${clean}?text=${encodeURIComponent(`Hello, I saw your job vacancy for "${job.title}" printed in ${job.newspaper} and would like to apply.`)}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="btn-direct btn-direct-wa"
+                    >
+                      ?? WhatsApp
+                    </a>
+                  )}
+                </div>
+              );
+            })}
+            {job.contact_emails?.map((email) => (
+              <a
+                key={email}
+                href={`mailto:${email}?subject=${encodeURIComponent(`Application for ${job.title}`)}&body=${encodeURIComponent(`Dear Hiring Team,\n\nI am writing to apply for the ${job.title} position advertised in ${job.newspaper}.\n\nBest regards,\n`)}`}
+                className="btn-direct btn-direct-email"
+              >
+                ?? Email ({email})
+              </a>
+            ))}
+          </div>
+        </section>
+      )}
+
       <section className="card">
         <h2>Details from the advertisement</h2>
         <dl className="fields">
@@ -50,8 +88,20 @@ export default function JobDetail({ id }) {
           {field('Experience', job.experience)}
           {field('Salary', job.salary_text)}
           {field('Deadline', job.deadline && fmtDate(job.deadline))}
-          {field('Phone', (job.contact_phones || []).join(', '))}
-          {field('Email', (job.contact_emails || []).join(', '))}
+          {field('Phone', (job.contact_phones || []).length > 0 ? (
+            <span className="field-links">
+              {job.contact_phones.map((p) => (
+                <a key={p} href={phoneDialUrl(p)} className="field-click-link">?? {p}</a>
+              ))}
+            </span>
+          ) : null)}
+          {field('Email', (job.contact_emails || []).length > 0 ? (
+            <span className="field-links">
+              {job.contact_emails.map((e) => (
+                <a key={e} href={`mailto:${e}`} className="field-click-link">?? {e}</a>
+              ))}
+            </span>
+          ) : null)}
           {field('How to apply', job.application_instructions)}
         </dl>
         <p className="verify">

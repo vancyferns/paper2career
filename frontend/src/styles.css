@@ -436,3 +436,146 @@ mark { background: var(--warn-bg); color: inherit; padding: 0 .2em; }
   .filters-grid { grid-template-columns: 1fr; gap: .5rem; }
   .review-grid { grid-template-columns: 1fr; }
 }
+
+/* Direct Contact & Application Action Styles */
+.contact-action-card {
+  border-left: 4px solid var(--accent);
+  background: #fdfbf7;
+}
+
+.contact-action-hint {
+  font-size: 0.88rem;
+  color: var(--muted);
+  margin: -0.25rem 0 0.85rem;
+}
+
+.contact-btn-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.phone-btn-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.btn-direct {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.55rem 1rem;
+  font-size: 0.88rem;
+  font-weight: 600;
+  border-radius: 8px;
+  text-decoration: none;
+  transition: transform 0.1s ease, filter 0.15s ease;
+}
+
+.btn-direct:hover {
+  filter: brightness(0.95);
+  transform: translateY(-1px);
+}
+
+.btn-direct:active {
+  transform: translateY(0);
+}
+
+.btn-direct-call {
+  background: #0284c7;
+  color: #fff;
+}
+
+.btn-direct-wa {
+  background: #25D366;
+  color: #fff;
+}
+
+.btn-direct-email {
+  background: #4f46e5;
+  color: #fff;
+}
+
+.field-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.75rem;
+}
+
+.field-click-link {
+  color: var(--accent);
+  font-weight: 500;
+  text-decoration: underline;
+}
+
+.field-click-link:hover {
+  color: var(--ink);
+}
+
+/* Feed Job Card Contact Bar */
+.card-contact-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 1rem;
+  background: #fbfaf8;
+  border-top: 1px dashed var(--line);
+  border-bottom-left-radius: var(--radius);
+  border-bottom-right-radius: var(--radius);
+}
+
+.contact-pill-pair {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.contact-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.28rem 0.65rem;
+  font-size: 0.76rem;
+  font-weight: 600;
+  border-radius: 999px;
+  text-decoration: none;
+  transition: all 0.15s ease;
+}
+
+.contact-pill.pill-call {
+  background: #e0f2fe;
+  color: #0369a1;
+  border: 1px solid #bae6fd;
+}
+
+.contact-pill.pill-call:hover {
+  background: #0284c7;
+  color: #fff;
+  border-color: #0284c7;
+}
+
+.contact-pill.pill-wa {
+  background: #dcfce7;
+  color: #15803d;
+  border: 1px solid #bbf7d0;
+}
+
+.contact-pill.pill-wa:hover {
+  background: #16a34a;
+  color: #fff;
+  border-color: #16a34a;
+}
+
+.contact-pill.pill-email {
+  background: #e0e7ff;
+  color: #4338ca;
+  border: 1px solid #c7d2fe;
+}
+
+.contact-pill.pill-email:hover {
+  background: #4f46e5;
+  color: #fff;
+  border-color: #4f46e5;
+}
