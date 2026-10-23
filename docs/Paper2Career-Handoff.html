@@ -1,0 +1,1225 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Paper2Career Handoff</title>
+<meta name="description" content="Paper2Career — Technical Handoff &amp; Production Readiness: what the product does, how it works, APIs, verification and remaining work.">
+<style>
+:root {
+  --bg: #f7f6f2; --surface: #ffffff; --ink: #1d2024; --muted: #5c626a; --line: #e0ddd4;
+  --accent: #0b6b56; --code-bg: #f0eee8; --edge: #8a8f96; --thead: #faf9f5;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #16181b; --surface: #1e2125; --ink: #e8e9eb; --muted: #a3a8af; --line: #33373d;
+    --accent: #4cc3a2; --code-bg: #2a2e33; --edge: #7d838b; --thead: #24282d; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #16181b; --surface: #1e2125; --ink: #e8e9eb; --muted: #a3a8af; --line: #33373d;
+  --accent: #4cc3a2; --code-bg: #2a2e33; --edge: #7d838b; --thead: #24282d; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body { margin: 0; background: var(--bg); color: var(--ink);
+  font: 16px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+.layout { display: grid; grid-template-columns: 250px minmax(0, 1fr); gap: 40px; max-width: 1280px; margin: 0 auto; padding: 32px 24px 80px; }
+nav.toc { position: sticky; top: 24px; align-self: start; max-height: calc(100vh - 48px); overflow: auto; font-size: 14px; }
+nav.toc .label { font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+nav.toc ul { list-style: none; margin: 0; padding: 0; }
+nav.toc li a { display: block; padding: 5px 10px; border-radius: 6px; color: var(--muted); text-decoration: none; border-left: 2px solid transparent; }
+nav.toc li a:hover { color: var(--ink); background: var(--surface); border-left-color: var(--accent); }
+main { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 40px 48px; min-width: 0; }
+h1 { font-size: 30px; line-height: 1.2; margin: 0 0 8px; }
+h2 { font-size: 22px; margin: 48px 0 12px; padding-top: 16px; border-top: 1px solid var(--line); scroll-margin-top: 16px; }
+h3 { font-size: 17px; margin: 28px 0 8px; }
+p, li { max-width: 80ch; }
+.byline { color: var(--muted); font-size: 14px; margin: 0 0 24px; }
+a { color: var(--accent); }
+code { font-family: ui-monospace, "Cascadia Code", Consolas, monospace; font-size: .88em; background: var(--code-bg); padding: .1em .35em; border-radius: 4px; overflow-wrap: anywhere; }
+pre { background: var(--code-bg); padding: 14px 16px; border-radius: 8px; overflow-x: auto; }
+pre code { background: none; padding: 0; }
+.table-wrap { overflow-x: auto; margin: 12px 0 20px; border: 1px solid var(--line); border-radius: 8px; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { text-align: left; vertical-align: top; padding: 8px 12px; border-bottom: 1px solid var(--line); }
+th { background: var(--thead); font-weight: 600; white-space: nowrap; }
+tr:last-child td { border-bottom: 0; }
+figure { margin: 20px 0; }
+.diagram { width: 100%; max-width: 760px; height: auto; display: block; font-family: inherit; }
+figcaption { font-size: 13px; color: var(--muted); margin-top: 6px; }
+.theme-toggle { position: fixed; top: 14px; right: 16px; background: var(--surface); color: var(--ink); border: 1px solid var(--line);
+  border-radius: 8px; padding: 6px 10px; font: inherit; font-size: 13px; cursor: pointer; }
+@media (max-width: 900px) {
+  .layout { grid-template-columns: 1fr; padding: 16px 16px 60px; gap: 16px; }
+  nav.toc { position: static; max-height: none; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px; }
+  main { padding: 24px 16px; }
+  h1 { font-size: 24px; }
+}
+@media print {
+  nav.toc, .theme-toggle { display: none; }
+  .layout { display: block; padding: 0; }
+  main { border: 0; padding: 0; }
+}
+</style>
+</head>
+<body>
+<button class="theme-toggle" type="button" aria-label="Toggle light or dark theme">Theme</button>
+<div class="layout">
+<nav class="toc" aria-label="Contents"><div class="label">Contents</div><div class="toc">
+<ul>
+<li><a href="#handoff-summary">Handoff summary</a></li>
+<li><a href="#what-the-product-does">What the product does</a></li>
+<li><a href="#end-to-end-flow">End-to-end flow</a></li>
+<li><a href="#tech-stack">Tech stack</a></li>
+<li><a href="#repository-layout">Repository layout</a></li>
+<li><a href="#worker-technical-implementation">Worker technical implementation</a></li>
+<li><a href="#data-model-appwrite">Data model (Appwrite)</a></li>
+<li><a href="#api-reference">API reference</a></li>
+<li><a href="#frontend">Frontend</a></li>
+<li><a href="#setup-and-deployment-runbook">Setup and deployment runbook</a></li>
+<li><a href="#end-to-end-verification">End-to-end verification</a></li>
+<li><a href="#remaining-work-before-production">Remaining work before production</a></li>
+</ul>
+</div>
+</nav>
+<main>
+<h1>Paper2Career — Technical Handoff &amp; Production Readiness</h1>
+<p class='byline'>Oct 23, 2026 · @Nitin Chitari</p>
+
+<h2 id="handoff-summary">Handoff summary</h2>
+<p>Paper2Career's MVP is code-complete in <code>D:\Mograsys\paper2career</code>, and it has run end to end on two live editions, producing 227 jobs with 124 linked across days. It has not yet been connected to a live Appwrite project, and the CI OCR engine (Tesseract) is untested on these pages. Start with section 12, "Remaining work". Section 11 records what has actually been run and verified.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Area</th>
+<th>State</th>
+<th>Verified how</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Source discovery (O Heraldo e-paper)</td>
+<td>Done</td>
+<td>Parser run against the live edition HTML of 23 Oct 2026: 18 pages, edition id 1114</td>
+</tr>
+<tr>
+<td>Pipeline logic (segment, classify, extract, match, store, log)</td>
+<td>Done</td>
+<td>18 pytest tests pass, plus a live two-edition run (section 11)</td>
+</tr>
+<tr>
+<td>OCR on real page scans</td>
+<td>Working with Windows OCR; Tesseract untested</td>
+<td>See section 11</td>
+</tr>
+<tr>
+<td>Appwrite schema + setup script</td>
+<td>Written against SDK v26</td>
+<td>Signatures checked; never run against a real project</td>
+</tr>
+<tr>
+<td>GitHub Actions daily workflow</td>
+<td>Written</td>
+<td>Not yet pushed or run</td>
+</tr>
+<tr>
+<td>React + Vite website</td>
+<td>Builds cleanly</td>
+<td>Demo mode only; not yet connected to Appwrite</td>
+</tr>
+<tr>
+<td>Deployment</td>
+<td>Not started</td>
+<td>—</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Rules a new agent must keep:</strong></p>
+<ul>
+<li>Never invent field values. A salary, deadline or employer that wasn't printed stays null.</li>
+<li>Nothing is published without a human reviewer.</li>
+<li>Re-running ingestion must never create duplicate rows. Row IDs are deterministic.</li>
+<li>Never bypass the publisher's access controls. The worker stops on HTTP 401 or 403.</li>
+<li>The Appwrite API key exists only on the server: in GitHub Secrets and <code>worker/.env</code>, never in the browser.</li>
+</ul>
+<h2 id="what-the-product-does">What the product does</h2>
+<p>Paper2Career turns newspaper recruitment classifieds into a searchable job feed. Every listing links back to the page it was printed on, and the feed records when the ad first and last appeared.</p>
+<p>It solves four problems from the SRS:</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Problem</th>
+<th>How Paper2Career answers it</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>P1</td>
+<td>Vacancies are buried in dense classified pages</td>
+<td>OCR + extraction into fields that can be searched by role, location and qualification</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>The same ad repeats; revised ads change details</td>
+<td>Matching across editions; changed fields become revisions for a reviewer</td>
+</tr>
+<tr>
+<td>P3</td>
+<td>Readers can't see where a listing came from</td>
+<td>Each listing shows the scanned ad, newspaper, date, page and a link to the e-paper</td>
+</tr>
+<tr>
+<td>P4</td>
+<td>Collecting ads by hand every day doesn't scale</td>
+<td>Scheduled worker runs three times a day; every run is logged</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Users:</strong> job seekers (public feed), reviewers (who correct and publish extracted jobs), and the operator (who watches ingestion status).</p>
+<p><strong>MVP scope:</strong> one source, the English O Heraldo e-paper (<a href="https://epaper.heraldgoa.in">epaper.heraldgoa.in</a>), and its classifieds page. Out of scope for now: notifications to job seekers (FR-12), other newspapers, and employer verification.</p>
+<p><strong>Hackathon context:</strong> Appwrite Databases Hackathon, 19–31 October 2026. Appwrite TablesDB must be the core data store.</p>
+<h2 id="end-to-end-flow">End-to-end flow</h2>
+<p>Each day the worker turns the newspaper's classifieds page into private job rows. A reviewer then checks each one against the scanned ad and publishes it to the public feed.</p>
+<figure><svg class="diagram" viewBox="0 0 760 688" role="img" aria-label="Every listing passes a human reviewer before it goes public" font-size="13"><defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="var(--edge)"/></marker></defs><text x="24" y="32" font-size="15" font-weight="600" fill="var(--ink)">Every listing passes a human reviewer before it goes public</text><text x="24" y="60" font-size="11.5" font-weight="600" fill="var(--muted)">WORKER (Python on GitHub Actions)</text><rect x="24" y="72" width="340" height="56" rx="8" fill="none" stroke="var(--edge)" stroke-width="1.25"/><text x="40" y="96" font-weight="600" fill="var(--ink)">1&#160; Scheduler starts a run</text><text x="40" y="114" font-size="11.5" fill="var(--muted)">GitHub Actions cron: 07:00, 10:00, 14:00 IST</text><path d="M194 128V144" fill="none" stroke="var(--edge)" stroke-width="1.25" marker-end="url(#arrow)"/><rect x="24" y="144" width="340" height="56" rx="8" fill="none" stroke="var(--edge)" stroke-width="1.25"/><text x="40" y="168" font-weight="600" fill="var(--ink)">2&#160; Discover the edition</text><text x="40" y="186" font-size="11.5" fill="var(--muted)">Edition page by date; 404 means not published yet</text><path d="M194 200V216" fill="none" stroke="var(--edge)" stroke-width="1.25" marker-end="url(#arrow)"/><rect x="24" y="216" width="340" height="56" rx="8" fill="none" stroke="var(--edge)" stroke-width="1.25"/><text x="40" y="240" font-weight="600" fill="var(--ink)">3&#160; Download page scans</text><text x="40" y="258" font-size="11.5" fill="var(--muted)">Full-resolution JPGs, checksummed and cached</text><path d="M194 272V288" fill="none" stroke="var(--edge)" stroke-width="1.25" marker-end="url(#arrow)"/><rect x="24" y="288" width="340" height="56" rx="8" fill="none" stroke="var(--edge)" stroke-width="1.25"/><text x="40" y="312" font-weight="600" fill="var(--ink)">4&#160; Find the classifieds page</text><text x="40" y="330" font-size="11.5" fill="var(--muted)">OCR of 800 px previews; only that page in full</text><path d="M194 344V360" fill="none" stroke="var(--edge)" stroke-width="1.25" marker-end="url(#arrow)"/><rect x="24" y="360" width="340" height="56" rx="8" fill="none" stroke="var(--edge)" stroke-width="1.25"/><text x="40" y="384" font-weight="600" fill="var(--ink)">5&#160; OCR and split into ads</text><text x="40" y="402" font-size="11.5" fill="var(--muted)">Columns, headings, 10-digit ad reference numbers</text><path d="M194 416V432" fill="none" stroke="var(--edge)" stroke-width="1.25" marker-end="url(#arrow)"/><rect x="24" y="432" width="340" height="56" rx="8" fill="none" stroke="var(--edge)" stroke-width="1.25"/><text x="40" y="456" font-weight="600" fill="var(--ink)">6&#160; Keep recruitment ads, extract fields</text><text x="40" y="474" font-size="11.5" fill="var(--muted)">Drops property and vehicle ads; reads job fields</text><path d="M194 488V504" fill="none" stroke="var(--edge)" stroke-width="1.25" marker-end="url(#arrow)"/><rect x="24" y="504" width="340" height="56" rx="8" fill="none" stroke="var(--edge)" stroke-width="1.25"/><text x="40" y="528" font-weight="600" fill="var(--ink)">7&#160; Match against earlier editions</text><text x="40" y="546" font-size="11.5" fill="var(--muted)">Repeats link to one job; changed details flagged</text><path d="M194 560V576" fill="none" stroke="var(--edge)" stroke-width="1.25" marker-end="url(#arrow)"/><rect x="24" y="576" width="340" height="56" rx="8" fill="none" stroke="var(--edge)" stroke-width="1.25"/><text x="40" y="600" font-weight="600" fill="var(--ink)">8&#160; Store rows and log the run</text><text x="40" y="618" font-size="11.5" fill="var(--muted)">New jobs saved as needs_review, with an ad crop</text><rect x="404" y="72" width="332" height="272" rx="8" fill="none" stroke="var(--edge)" stroke-width="1.25"/><text x="420" y="96" font-weight="600" fill="var(--ink)">Appwrite Cloud</text><rect x="420" y="112" width="284" height="72" rx="8" fill="none" stroke="var(--edge)" stroke-width="1.25"/><text x="436" y="136" font-weight="600" fill="var(--ink)">TablesDB&#160; paper2career_db</text><text x="436" y="152" font-size="11.5" fill="var(--muted)">editions, jobs, job_appearances,</text><text x="436" y="168" font-size="11.5" fill="var(--muted)">job_revisions, ingestion_runs</text><rect x="420" y="200" width="284" height="56" rx="8" fill="none" stroke="var(--edge)" stroke-width="1.25"/><text x="436" y="224" font-weight="600" fill="var(--ink)">Storage&#160; ad_crops</text><text x="436" y="242" font-size="11.5" fill="var(--muted)">One JPEG per ad, private until published</text><rect x="420" y="272" width="284" height="56" rx="8" fill="none" stroke="var(--edge)" stroke-width="1.25"/><text x="436" y="296" font-weight="600" fill="var(--ink)">Auth&#160; team reviewers</text><text x="436" y="314" font-size="11.5" fill="var(--muted)">Email/password login for reviewers</text><rect x="404" y="376" width="332" height="288" rx="8" fill="none" stroke="var(--edge)" stroke-width="1.25"/><text x="420" y="400" font-weight="600" fill="var(--ink)">Website (React + Vite)</text><rect x="420" y="416" width="284" height="72" rx="8" fill="var(--accent)" fill-opacity="0.12" stroke="var(--accent)" stroke-width="2"/><text x="436" y="440" font-weight="600" fill="var(--ink)">Reviewer queue&#160; #/review</text><text x="436" y="456" font-size="11.5" fill="var(--ink)">Correct fields, then publish or reject</text><text x="436" y="472" font-size="11.5" fill="var(--ink)">Accept or keep changed details</text><rect x="420" y="520" width="284" height="56" rx="8" fill="none" stroke="var(--edge)" stroke-width="1.25"/><text x="436" y="544" font-weight="600" fill="var(--ink)">Public job feed&#160; #/</text><text x="436" y="562" font-size="11.5" fill="var(--muted)">Published jobs, scanned ad and history</text><rect x="420" y="592" width="284" height="56" rx="8" fill="none" stroke="var(--edge)" stroke-width="1.25"/><text x="436" y="616" font-weight="600" fill="var(--ink)">Ingestion status&#160; #/runs</text><text x="436" y="634" font-size="11.5" fill="var(--muted)">Every run: status, counts, errors</text><g fill="none" stroke="var(--edge)" stroke-width="1.25"><path d="M364 604H384V148H420" marker-end="url(#arrow)"/><path d="M704 148H720V452H704" marker-end="url(#arrow)"/><path d="M562 488V520" marker-end="url(#arrow)"/></g><text x="572" y="508" font-size="11.5" fill="var(--muted)">publish adds read(any)</text></svg><figcaption>End-to-end flow · 8 worker steps, Appwrite, website</figcaption></figure>
+<p>The worker writes only through the server API key. The website reads public rows anonymously, and reviewers act through their own Appwrite session. A run that finds no new edition is logged as <code>NO_NEW_EDITION</code>, and the 10:00 and 14:00 retries pick up a late edition.</p>
+<h2 id="tech-stack">Tech stack</h2>
+<p>The stack is Python for ingestion, Appwrite for data and auth, React for the site, and GitHub Actions as the scheduler.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Layer</th>
+<th>Technology</th>
+<th>Version used</th>
+<th>Why</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Scheduler</td>
+<td>GitHub Actions cron</td>
+<td><code>ubuntu-latest</code>, Python 3.12</td>
+<td>Free, runs Tesseract via apt, keeps secrets out of code</td>
+</tr>
+<tr>
+<td>Worker language</td>
+<td>Python</td>
+<td>3.12 in CI, 3.13 locally</td>
+<td>OCR and PDF libraries</td>
+</tr>
+<tr>
+<td>HTTP + HTML</td>
+<td><code>requests</code>, <code>beautifulsoup4</code></td>
+<td>2.34, 4.15</td>
+<td>Edition and page discovery</td>
+</tr>
+<tr>
+<td>PDF text</td>
+<td><code>pymupdf</code> (fitz)</td>
+<td>≥ 1.24</td>
+<td>Native text first, render for OCR when the PDF is a scan (manual import path)</td>
+</tr>
+<tr>
+<td>OCR (CI)</td>
+<td>Tesseract via <code>pytesseract</code></td>
+<td>0.3.13</td>
+<td>Standard, installed with apt</td>
+</tr>
+<tr>
+<td>OCR (Windows laptop)</td>
+<td><code>rapidocr</code> + <code>onnxruntime</code></td>
+<td>latest</td>
+<td>Pip-only option. On Windows the default is the built-in Windows OCR (no install)</td>
+</tr>
+<tr>
+<td>Images</td>
+<td><code>Pillow</code>, <code>numpy</code></td>
+<td>13.0, 2.5</td>
+<td>Page scans, downscaling, evidence crops</td>
+</tr>
+<tr>
+<td>Fuzzy matching</td>
+<td><code>rapidfuzz</code></td>
+<td>3.14</td>
+<td>Repeat-ad detection despite OCR noise</td>
+</tr>
+<tr>
+<td>Dates</td>
+<td><code>python-dateutil</code></td>
+<td>3.0</td>
+<td>Deadline parsing ("5th January", "30/11/2026")</td>
+</tr>
+<tr>
+<td>Database</td>
+<td>Appwrite Cloud TablesDB</td>
+<td>Python SDK 26.0.0</td>
+<td>Hackathon requirement; rows, row-level permissions, indexes</td>
+</tr>
+<tr>
+<td>File storage</td>
+<td>Appwrite Storage (<code>ad_crops</code> bucket)</td>
+<td>same SDK</td>
+<td>Small JPEG of each ad as evidence</td>
+</tr>
+<tr>
+<td>Auth</td>
+<td>Appwrite Account + Teams</td>
+<td>Web SDK 29.1.0</td>
+<td>Reviewer login; <code>reviewers</code> team gates write access</td>
+</tr>
+<tr>
+<td>Frontend</td>
+<td>React 18 + Vite 6</td>
+<td>18.3, 6.x</td>
+<td>Simple SPA; hash routing, no router library</td>
+</tr>
+<tr>
+<td>Tests</td>
+<td>pytest</td>
+<td>9.1</td>
+<td>Acceptance tests without network or OCR</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="repository-layout">Repository layout</h2>
+<p>The repository has two independent parts, <code>worker/</code> (Python) and <code>frontend/</code> (React), plus one workflow file. It is not yet a git repository.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Path</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>README.md</code></td>
+<td>Setup and everyday commands</td>
+</tr>
+<tr>
+<td><code>.gitignore</code></td>
+<td>Excludes <code>.env</code>, <code>.venv</code>, <code>worker/downloads/</code>, <code>worker/data/</code>, <code>node_modules</code>, <code>dist</code></td>
+</tr>
+<tr>
+<td><code>.github/workflows/daily-ingestion.yml</code></td>
+<td>Cron 01:30, 04:30, 08:30 UTC (07:00, 10:00, 14:00 IST): install Tesseract, run tests, run ingestion</td>
+</tr>
+<tr>
+<td><code>worker/requirements.txt</code></td>
+<td>Python dependencies</td>
+</tr>
+<tr>
+<td><code>worker/.env.example</code></td>
+<td>Template for <code>APPWRITE_*</code> and optional tuning variables</td>
+</tr>
+<tr>
+<td><code>worker/paper2career/__main__.py</code></td>
+<td>CLI: <code>setup</code>, <code>run</code>, <code>import</code>, <code>export-demo</code>, plus the global <code>--local</code> flag</td>
+</tr>
+<tr>
+<td><code>worker/paper2career/config.py</code></td>
+<td><code>Settings</code> from env vars; loads <code>worker/.env</code></td>
+</tr>
+<tr>
+<td><code>worker/paper2career/source.py</code></td>
+<td>O Heraldo adapter: edition discovery, page image download</td>
+</tr>
+<tr>
+<td><code>worker/paper2career/ocr.py</code></td>
+<td>OCR engines (Tesseract, RapidOCR tiled) and the PDF text path</td>
+</tr>
+<tr>
+<td><code>worker/paper2career/models.py</code></td>
+<td>Dataclasses <code>OcrLine</code>, <code>Advertisement</code>, <code>JobDraft</code></td>
+</tr>
+<tr>
+<td><code>worker/paper2career/extract.py</code></td>
+<td>Columns, sections, ad segmentation, recruitment filter, field extraction</td>
+</tr>
+<tr>
+<td><code>worker/paper2career/matching.py</code></td>
+<td>Repeat detection and changed-field detection</td>
+</tr>
+<tr>
+<td><code>worker/paper2career/pipeline.py</code></td>
+<td><code>Ingestor</code>: run orchestration, per-page processing, persistence, evidence crops</td>
+</tr>
+<tr>
+<td><code>worker/paper2career/repository.py</code></td>
+<td><code>Repository</code> interface; <code>AppwriteRepository</code>; <code>LocalRepository</code> (JSON file)</td>
+</tr>
+<tr>
+<td><code>worker/paper2career/setup_appwrite.py</code></td>
+<td>Declarative schema; creates database, tables, columns, indexes, bucket and team</td>
+</tr>
+<tr>
+<td><code>worker/tests/test_pipeline.py</code></td>
+<td>18 tests: SRS acceptance cases plus regressions from real pages</td>
+</tr>
+<tr>
+<td><code>worker/downloads/</code></td>
+<td>Page JPGs + OCR cache (<code>*.ocr.json</code>), git-ignored</td>
+</tr>
+<tr>
+<td><code>worker/data/</code></td>
+<td>Local JSON store + crops for <code>--local</code> runs, git-ignored</td>
+</tr>
+<tr>
+<td><code>frontend/src/api.js</code></td>
+<td>All data access: Appwrite or demo JSON</td>
+</tr>
+<tr>
+<td><code>frontend/src/format.js</code></td>
+<td>Dates; <code>listingStatus()</code> deadline and staleness wording</td>
+</tr>
+<tr>
+<td><code>frontend/src/App.jsx</code></td>
+<td>Shell, hash router, nav, disclaimer footer</td>
+</tr>
+<tr>
+<td><code>frontend/src/pages/Feed.jsx</code></td>
+<td>Search + filters + listing cards</td>
+</tr>
+<tr>
+<td><code>frontend/src/pages/JobDetail.jsx</code></td>
+<td>Fields, evidence crop, OCR text, publication history</td>
+</tr>
+<tr>
+<td><code>frontend/src/pages/Review.jsx</code></td>
+<td>Reviewer login, review queue, revisions</td>
+</tr>
+<tr>
+<td><code>frontend/src/pages/Runs.jsx</code></td>
+<td>Ingestion run log</td>
+</tr>
+<tr>
+<td><code>frontend/src/components/AdCrop.jsx</code></td>
+<td>Stored crop, falling back to a CSS crop of the publisher's page image</td>
+</tr>
+<tr>
+<td><code>frontend/public/demo-data.json</code></td>
+<td>Demo dataset written by <code>export-demo</code></td>
+</tr>
+</tbody>
+</table></div>
+<p>Also: <code>worker/scripts/winocr.ps1</code> is the Windows OCR helper. The worker calls it with a PNG path, and it prints JSON lines.</p>
+<h2 id="worker-technical-implementation">Worker technical implementation</h2>
+<p>The worker is deterministic: the same page always produces the same row IDs. That property is what makes retries and re-runs safe.</p>
+<h3 id="source-adapter-sourcepy">Source adapter (<code>source.py</code>)</h3>
+<ul>
+<li><code>HeraldoSource.find_edition(day)</code> fetches <code>/epaper/oheraldo/DD-MM-YYYY</code>. A 404 means the edition isn't published yet, and the method returns <code>None</code>.</li>
+<li><code>parse_edition_html()</code> selects <code>a.pagethumb[data-ed_date=&lt;ISO date&gt;][data-page]</code>. Each image <code>src</code> matches <code>/uploads/epaper/YYYY-MM/(thumbnail-NNN-)?&lt;hash&gt;.jpg</code>; dropping the prefix gives the full-resolution page.</li>
+<li>If the site serves thumbnails for a <em>different</em> date, it returns <code>None</code>.</li>
+<li>If no thumbnails are found at all, it raises <code>LayoutChanged</code>.</li>
+<li><code>download_page()</code> saves to <code>downloads/&lt;edition_key&gt;/page-NN.jpg</code> and computes a SHA-256 checksum. An existing file is reused.</li>
+<li>HTTP etiquette: user agent <code>Paper2Career/0.1 (+newspaper job discovery; respects robots.txt)</code>, 1.5 s between requests, 30 s timeout. A 401 or 403 raises <code>SourceUnavailable</code>. There is no retry with a disguised client.</li>
+</ul>
+<h3 id="ocr-ocrpy">OCR (<code>ocr.py</code>)</h3>
+<ul>
+<li><code>available_engine()</code> honours <code>OCR_ENGINE</code>. Otherwise it uses Tesseract if the binary is found, then RapidOCR, then (on Windows) the built-in Windows 10/11 OCR through worker/scripts/winocr.ps1. The Windows engine reads a full 4189×6485 page in about 5 s, including the reverse-printed headings.</li>
+<li>Tesseract: <code>image_to_data(--psm 3)</code> words are grouped into lines by (block, paragraph, line), with confidence scaled to 0..1.</li>
+<li>RapidOCR: the page is processed in 1400 px tiles with 160 px overlap, so small classified print isn't downscaled away. A line touching an inner tile edge is dropped, because the neighbouring tile sees it whole. Overlapping duplicates are removed by IoU &gt; 0.5.</li>
+<li>PDF: native text lines via PyMuPDF. If the page has fewer than 200 characters of text, it is rendered at 300 dpi and OCR'd.</li>
+<li><code>pipeline.page_lines()</code> caches OCR output next to the image as <code>page-NN.&lt;checksum12&gt;.ocr.json</code>.</li>
+</ul>
+<h3 id="finding-the-classifieds-page">Finding the classifieds page</h3>
+<p>The e-paper has no section metadata, and the classifieds page moves (it was page 8 on 23 Oct 2026). <code>looks_like_classifieds()</code> OCRs each page's 800 px preview (about 350 KB, upscaled 2×) and needs at least 3 matches of: classified(s), situations vacant, wanted, vacancy, recruitment, appointment(s), walk-in. Only matching pages are downloaded at full resolution (about 6 MB each), so an edition costs about 13 MB instead of about 50 MB.</p>
+<h3 id="segmentation-extractsegment_ads">Segmentation (<code>extract.segment_ads</code>)</h3>
+<ol>
+<li><strong>Columns.</strong> <code>split_columns()</code> builds an x-coverage histogram of OCR line boxes. Gutters are x ranges whose coverage is at most 10% of the maximum (a headline spanning two columns still crosses a gutter). Line fragments on the same baseline are merged, because Windows OCR splits justified lines. Each line goes to the column holding its centre, which keeps right-aligned reference numbers in their own column.</li>
+<li><strong>Headings.</strong> <code>match_heading()</code> accepts a short (at most 4 words), mostly uppercase line that names a known section. Known sections fall into three lists: <code>JOB_SECTIONS</code> (e.g. SITUATIONS VACANT), <code>OTHER_SECTIONS</code> (e.g. PROPERTIES WANTED, ACC WANTED, VEHICLES AVAILABLE, MATRIMONIALS) and <code>NEUTRAL_SECTIONS</code> (GENERAL, SERVICES, CLASSIFIEDS). A heading applies until the next heading, across columns.</li>
+<li><strong>Reference mode.</strong> This applies when the page has at least 3 lines matching <code>^\W*(20\d{8})(?:\s*-\s*\d{1,2})?\W*$</code>. O Heraldo prints a 10-digit booking number at the end of every ad. An ad ends at that number, which becomes <code>ad_reference</code>, and it may continue from the bottom of one column to the top of the next. Only a gap of more than 1.8× the line height breaks an ad that has no number yet; such a chunk has <code>terminated=False</code>.</li>
+<li><strong>Gap mode</strong> (other layouts): a new ad starts at a gap of more than 0.9× the line height, or at a line opening with Wanted / Required / Urgently / Vacancy / Hiring / Walk-in.</li>
+<li><code>_make_ad()</code> joins hyphenated line breaks. For an ad split across columns, the bounding box (used for the evidence crop) is the larger part.</li>
+</ol>
+<h3 id="recruitment-filter-recruitment_score-is_recruitment">Recruitment filter (<code>recruitment_score</code>, <code>is_recruitment</code>)</h3>
+<p>Score = 0.5 + 0.12 × (job keywords + role words) − 0.2 × non-job keywords. Then +0.3 inside a job section, or −0.45 inside an other section.</p>
+<ul>
+<li><strong>Accept</strong> a terminated ad in a job section if it has at least one job signal and a score of 0.5 or more.</li>
+<li><strong>Accept</strong> anything else only if the score is 0.75 or more <strong>and</strong> a known role word appears. This catches a "WANTED Driver" ad under GENERAL, and rejects a news article that sits among the ads.</li>
+</ul>
+<h3 id="field-extraction-extract_jobs">Field extraction (<code>extract_jobs</code>)</h3>
+<ul>
+<li>One <code>JobDraft</code> per distinct role word in the ad, so "Driver and Cook" gives two jobs.</li>
+<li>Fields are matched by regex against curated vocabularies:</li>
+<li><code>ROLE_WORDS</code>: about 110 roles</li>
+<li><code>GOA_PLACES</code>: about 60 towns</li>
+<li>qualifications: SSC, HSSC, B.Com, ITI, GNM, Tally, …</li>
+<li>experience</li>
+<li>salary (Rs/INR/₹, "negotiable")</li>
+<li>Indian mobile numbers and Goa landlines (0832)</li>
+<li>emails</li>
+<li>employer suffixes (Pvt Ltd, Hotel, School, …)</li>
+<li><strong>Deadline</strong> only after a cue such as "last date", "apply before", "by" or "walk-in on", parsed day-first. A date with no year rolls forward past the publication date. Anything outside ±1 year is rejected.</li>
+<li><strong>Confidence</strong> = 0.45 × OCR confidence + 0.35 × field completeness + 0.2 × recruitment score. Missing fields are listed in <code>uncertain_fields</code> (title, contact, ocr_text, multi_role_split).</li>
+</ul>
+<h3 id="matching-matchingfind_match">Matching (<code>matching.find_match</code>)</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Order</th>
+<th>Signal</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Same <code>content_hash</code> (SHA-256 of the normalised ad text) and same <code>role_index</code></td>
+<td><code>exact</code>: linked automatically</td>
+</tr>
+<tr>
+<td>2</td>
+<td><code>fuzz.ratio(text)</code> ≥ 93 and <code>token_sort_ratio(title)</code> ≥ 85</td>
+<td><code>repeat</code>: linked automatically</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Title ≥ 85 and one of: a shared phone or email; text ≥ 80 with no conflicting contacts; text ≥ 97 even with different contacts</td>
+<td><code>probable</code>: linked, revision for review</td>
+</tr>
+<tr>
+<td>—</td>
+<td>None of the above</td>
+<td><code>new</code> job</td>
+</tr>
+</tbody>
+</table></div>
+<p>Candidates are jobs whose <code>last_seen_at</code> is within 90 days. <code>changed_fields()</code> compares deadline, salary_text, contact_phones, contact_emails, location, qualification, experience and employer. A field missing from the newer ad is <strong>not</strong> a change. Any change creates a <code>job_revisions</code> row and sets <code>has_pending_revision</code>. The job's own values stay as they were until a reviewer accepts.</p>
+<p>Two rules came from the real-page run. First, use plain character similarity, never <code>token_set_ratio</code>, which scores 100 whenever one ad's words are a subset of another's. On 22 Oct that linked a liquor-store ad to a restaurant ad, and the newspaper's disclaimer to a chef ad. Second, when both ads print contacts and none overlap, they are different advertisers unless the text is near-identical, as with two "house help cum nanny" ads in different towns. A repeat "auto" match also requires no conflicting contacts. When a repeat supplies a value the job lacked, <code>filled_fields()</code> fills it in without a review.</p>
+<h3 id="pipeline-pipelineingestor">Pipeline (<code>pipeline.Ingestor</code>)</h3>
+<ul>
+<li><code>run(days, trigger, pages, force)</code> creates an <code>ingestion_runs</code> row with status <code>RUNNING</code>. It processes the last <code>LOOKBACK_DAYS</code> (default 3, IST), oldest first, then writes counts and a final status: <code>SUCCESS</code>, <code>NO_NEW_EDITION</code>, <code>PARTIAL</code> or <code>FAILED</code>. Every exception is captured into <code>error_message</code>. The CLI exits with 1 only on <code>FAILED</code>.</li>
+<li><code>process_edition()</code> skips an edition already <code>PROCESSED</code> or <code>NO_RECRUITMENT_FOUND</code> unless <code>force</code> is set. A crash leaves it <code>PROCESSING</code>, so the next run retries it.</li>
+<li><code>store_job()</code> works with deterministic IDs (each at most 36 characters, as Appwrite requires):</li>
+<li><code>appearance = ap_ + sha256(edition_key|content_hash|role_index)[:32]</code></li>
+<li><code>job = job_ + same</code></li>
+<li><code>crop = cr_ + sha256(edition_key|content_hash)[:32]</code></li>
+<li><code>revision = rv_ + appearance hash</code></li>
+<li>If the appearance already exists, it does nothing (<code>skipped_existing</code>).</li>
+<li>New jobs are always created <code>needs_review</code> and private. Low confidence (below <code>REVIEW_CONFIDENCE_THRESHOLD</code>, 0.75) adds a <code>low_confidence</code> flag.</li>
+<li>Evidence crop: the ad's bounding box plus 18 px padding, at most 900 px wide, JPEG quality 82. It is saved through <code>repo.save_crop()</code>. A failure here is logged and doesn't fail the job.</li>
+<li><code>import_file()</code> is the manual path for a downloaded PDF or JPG with a known date and page.</li>
+</ul>
+<h2 id="data-model-appwrite">Data model (Appwrite)</h2>
+<p>Database <code>paper2career_db</code> holds five tables, one storage bucket and one team. All of them are defined in <code>setup_appwrite.SCHEMA</code> and created idempotently. Strings longer than 2,000 characters are <code>text</code> columns, which keeps rows under MariaDB's 64 KB row limit. Shorter strings are <code>varchar</code>.</p>
+<h3 id="tables">Tables</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Table</th>
+<th>Row =</th>
+<th>Row security</th>
+<th>Columns (* = required, [] = array)</th>
+<th>Indexes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>editions</code></td>
+<td>one newspaper edition, ID <code>ed_&lt;alias&gt;-&lt;YYYY-MM-DD&gt;</code></td>
+<td>off</td>
+<td>edition_key*, newspaper*, publication_date*, source_url*, source_edition_id, page_count, status* (PROCESSING / PROCESSED / PARTIAL / NO_RECRUITMENT_FOUND), classified_pages[int], checksum, jobs_found, processed_at</td>
+<td>publication_date</td>
+</tr>
+<tr>
+<td><code>jobs</code></td>
+<td>canonical vacancy</td>
+<td><strong>on</strong></td>
+<td>title*, employer, description* (text), location, qualification, experience, salary_text, contact_phones[], contact_emails[], application_instructions, deadline (YYYY-MM-DD), newspaper*, first_seen_at*, last_seen_at*, appearance_count*, review_status* (needs_review / published / rejected), confidence (float), uncertain_fields[], has_pending_revision (bool), latest_appearance_id, search_text (text), reviewed_by, reviewed_at</td>
+<td>(review_status, last_seen_at); last_seen_at; location; fulltext(search_text)</td>
+</tr>
+<tr>
+<td><code>job_appearances</code></td>
+<td>an ad seen in one edition</td>
+<td><strong>on</strong></td>
+<td>job_id*, edition_key*, publication_date*, newspaper*, page_number*, ad_reference, section, extracted_text* (text), content_hash*, role_index, confidence, match_type* (new / exact / repeat / probable), match_score, source_url*, page_image_url, bbox[int x0,y0,x1,y1], page_width, page_height, crop_file_id</td>
+<td>(job_id, publication_date); content_hash</td>
+</tr>
+<tr>
+<td><code>job_revisions</code></td>
+<td>a detected change</td>
+<td>off</td>
+<td>job_id*, appearance_id*, publication_date*, match_type*, match_score, status* (pending / accepted / rejected), changed_fields[], old_values (JSON text), new_values (JSON text), created_at*, resolved_by, resolved_at</td>
+<td>status; job_id</td>
+</tr>
+<tr>
+<td><code>ingestion_runs</code></td>
+<td>a worker run, ID <code>run_&lt;UTC timestamp&gt;</code></td>
+<td>off, <strong>public read</strong></td>
+<td>started_at*, finished_at, status* (RUNNING / SUCCESS / NO_NEW_EDITION / PARTIAL / FAILED), trigger, editions_checked, editions_found, editions_processed, pages_processed, pages_failed, ads_found, jobs_extracted, new_jobs, repeat_appearances, revisions_flagged, skipped_existing, error_message (text), notes (text)</td>
+<td>started_at</td>
+</tr>
+</tbody>
+</table></div>
+<p>Dates are stored as ISO strings (<code>YYYY-MM-DD</code>, or full ISO timestamps for <code>*_at</code> audit fields). Lexical order is chronological, which the range queries rely on.</p>
+<h3 id="storage">Storage</h3>
+<p>Bucket <code>ad_crops</code>: file security on, at most 2 MB per file, <code>jpg</code> only. The file ID equals the appearance's <code>crop_file_id</code> (<code>cr_…</code>).</p>
+<h3 id="permission-model">Permission model</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Who</th>
+<th>Can</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Worker (server API key)</td>
+<td>Everything; bypasses permissions</td>
+</tr>
+<tr>
+<td><code>team:reviewers</code> (table level)</td>
+<td>Read and update all five tables; read all crops</td>
+</tr>
+<tr>
+<td>Anyone (<code>read("any")</code>, row level)</td>
+<td>Only jobs a reviewer has <strong>published</strong>, plus those jobs' appearances and crops; all <code>ingestion_runs</code></td>
+</tr>
+<tr>
+<td>Anyone</td>
+<td>No create, update or delete anywhere</td>
+</tr>
+</tbody>
+</table></div>
+<p>Publishing adds <code>read("any")</code> to the job row, every appearance row of that job, and every crop file. Rejecting removes it. New appearances of an already-public job inherit public read when the worker creates them.</p>
+<h2 id="api-reference">API reference</h2>
+<p>Paper2Career has no custom HTTP server. Its "APIs" are the worker CLI, the Python module interfaces, Appwrite's REST API (through the SDKs), the frontend data layer, and the publisher's pages. Each is documented below.</p>
+<h3 id="worker-cli-python-m-paper2career-local-local-db-path-v-command">Worker CLI — <code>python -m paper2career [--local] [--local-db PATH] [-v] &lt;command&gt;</code></h3>
+<p>Run it from <code>worker/</code>. <code>--local</code> swaps Appwrite for <code>worker/data/local_db.json</code>.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Command</th>
+<th>Arguments</th>
+<th>Does</th>
+<th>Exit code</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>setup</code></td>
+<td>—</td>
+<td>Creates the team, database, tables, columns, indexes and bucket. Safe to re-run</td>
+<td>0; raises if <code>APPWRITE_*</code> are missing</td>
+</tr>
+<tr>
+<td><code>run</code></td>
+<td><code>--date YYYY-MM-DD</code> (repeatable), <code>--page N</code> (repeatable; skips classifieds detection), <code>--force</code> (re-process processed editions), <code>--trigger TEXT</code></td>
+<td>Ingests and prints the run summary JSON</td>
+<td>1 if status is <code>FAILED</code>, else 0</td>
+</tr>
+<tr>
+<td><code>import FILE</code></td>
+<td><code>--date</code>*, <code>--page</code>*, <code>--source-url</code></td>
+<td>Ingests a local PDF or JPG</td>
+<td>0</td>
+</tr>
+<tr>
+<td><code>export-demo</code></td>
+<td><code>--out PATH</code> (default <code>frontend/public/demo-data.json</code>)</td>
+<td>Dumps every table to JSON and copies the crops</td>
+<td>0</td>
+</tr>
+</tbody>
+</table></div>
+<p>The <code>run</code> summary JSON contains: <code>run_id</code>, <code>status</code>, <code>editions_checked</code>, <code>editions_found</code>, <code>editions_processed</code>, <code>pages_processed</code>, <code>pages_failed</code>, <code>ads_found</code>, <code>jobs_extracted</code>, <code>new_jobs</code>, <code>repeat_appearances</code>, <code>revisions_flagged</code>, <code>skipped_existing</code>, <code>error</code>.</p>
+<h3 id="environment-variables">Environment variables</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Default</th>
+<th>Used by</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>APPWRITE_ENDPOINT</code>, <code>APPWRITE_PROJECT_ID</code>, <code>APPWRITE_API_KEY</code></td>
+<td>—</td>
+<td>Worker (when unset, the worker falls back to the local store)</td>
+</tr>
+<tr>
+<td><code>APPWRITE_DATABASE_ID</code></td>
+<td><code>paper2career_db</code></td>
+<td>Worker</td>
+</tr>
+<tr>
+<td><code>SOURCE_ALIAS</code></td>
+<td><code>oheraldo</code></td>
+<td>Source adapter</td>
+</tr>
+<tr>
+<td><code>REQUEST_DELAY_SECONDS</code></td>
+<td>1.5</td>
+<td>Source adapter</td>
+</tr>
+<tr>
+<td><code>LOOKBACK_DAYS</code></td>
+<td>3</td>
+<td><code>run</code> without <code>--date</code></td>
+</tr>
+<tr>
+<td><code>DOWNLOAD_DIR</code></td>
+<td><code>worker/downloads</code></td>
+<td>Page cache</td>
+</tr>
+<tr>
+<td><code>REVIEW_CONFIDENCE_THRESHOLD</code></td>
+<td>0.75</td>
+<td><code>low_confidence</code> flag</td>
+</tr>
+<tr>
+<td><code>OCR_ENGINE</code></td>
+<td>auto</td>
+<td><code>tesseract, rapidocr or windows</code></td>
+</tr>
+<tr>
+<td><code>TESSERACT_CMD</code></td>
+<td>—</td>
+<td>Path to the Tesseract binary on Windows</td>
+</tr>
+<tr>
+<td><code>VITE_APPWRITE_ENDPOINT</code>, <code>VITE_APPWRITE_PROJECT_ID</code>, <code>VITE_APPWRITE_DATABASE_ID</code></td>
+<td>—</td>
+<td>Frontend (unset means demo mode)</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="python-module-interfaces">Python module interfaces</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Call</th>
+<th>Returns</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>HeraldoSource().find_edition(day: date)</code></td>
+<td><code>EditionRef \| None</code></td>
+<td>Raises <code>SourceUnavailable</code> or <code>LayoutChanged</code></td>
+</tr>
+<tr>
+<td><code>HeraldoSource().download_page(page: PageRef, edition_key)</code></td>
+<td><code>AcquiredPage(page, path, checksum)</code></td>
+<td>Cached on disk</td>
+</tr>
+<tr>
+<td><code>parse_edition_html(html, day, url, base, alias)</code></td>
+<td><code>EditionRef \| None</code></td>
+<td>Pure; tested</td>
+</tr>
+<tr>
+<td><code>ocr.ocr_file(path)</code> / <code>ocr.ocr_image(img)</code></td>
+<td><code>list[OcrLine]</code></td>
+<td><code>OcrLine(text, x0, y0, x1, y1, conf)</code></td>
+</tr>
+<tr>
+<td><code>ocr.pdf_lines(path, page_index=0)</code></td>
+<td><code>list[OcrLine]</code></td>
+<td>Native text, else OCR</td>
+</tr>
+<tr>
+<td><code>extract.segment_ads(lines)</code></td>
+<td><code>list[Advertisement]</code></td>
+<td>text, lines, section, column, bbox, ocr_confidence, ad_reference, terminated</td>
+</tr>
+<tr>
+<td><code>extract.is_recruitment(ad)</code> / <code>recruitment_score(ad)</code></td>
+<td><code>bool</code> / <code>float 0..1</code></td>
+<td></td>
+</tr>
+<tr>
+<td><code>extract.extract_jobs(ad, published: date)</code></td>
+<td><code>list[JobDraft]</code></td>
+<td>One per role</td>
+</tr>
+<tr>
+<td><code>matching.find_match(draft, ad_text, exact_job, candidates)</code></td>
+<td><code>MatchResult(kind, job, score, changes)</code></td>
+<td><code>.needs_review</code></td>
+</tr>
+<tr>
+<td><code>Ingestor(repo, source=None).run(days=None, trigger, pages=None, force=False)</code></td>
+<td>summary <code>dict</code></td>
+<td>Never raises</td>
+</tr>
+<tr>
+<td><code>Ingestor.import_file(path, date, page, source_url=None)</code></td>
+<td>stats <code>dict</code></td>
+<td></td>
+</tr>
+<tr>
+<td><code>open_repository(local_path=None)</code></td>
+<td><code>Repository</code></td>
+<td>Appwrite if configured, else local</td>
+</tr>
+<tr>
+<td><code>Repository.get / create / update / upsert / find / find_since / all / save_crop</code></td>
+<td>dict rows (<code>$id</code>, fields, <code>$public</code>)</td>
+<td>Same contract for both backends</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="appwrite-calls-made-by-the-worker-python-sdk-26-server-key">Appwrite calls made by the worker (Python SDK 26, server key)</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Purpose</th>
+<th>SDK call</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Read one row</td>
+<td><code>TablesDB.get_row(database_id, table_id, row_id)</code> (404 returns <code>None</code>)</td>
+</tr>
+<tr>
+<td>Create a row</td>
+<td><code>TablesDB.create_row(..., row_id, data, permissions)</code></td>
+</tr>
+<tr>
+<td>Update a row or its visibility</td>
+<td><code>TablesDB.update_row(..., row_id, data, permissions?)</code></td>
+</tr>
+<tr>
+<td>Look up by hash</td>
+<td><code>list_rows(queries=[Query.equal('content_hash',[h]), Query.limit(100)])</code></td>
+</tr>
+<tr>
+<td>Recent jobs for matching</td>
+<td><code>list_rows(queries=[Query.greater_than_equal('last_seen_at', since)])</code>, cursor-paged</td>
+</tr>
+<tr>
+<td>Upload a crop</td>
+<td><code>Storage.create_file('ad_crops', file_id, InputFile.from_bytes(...), permissions)</code> (409 is ignored)</td>
+</tr>
+<tr>
+<td>Schema</td>
+<td><code>create</code>, <code>create_table</code>, <code>update_table</code>, <code>create_varchar_column</code>, <code>create_text_column</code>, <code>create_integer_column</code>, <code>create_float_column</code>, <code>create_boolean_column</code>, <code>list_columns</code>, <code>create_index(type=TablesDBIndexType.KEY \| FULLTEXT)</code>, <code>Storage.create_bucket</code>, <code>Teams.create</code></td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="frontend-data-layer-frontendsrcapijs-web-sdk-29-no-api-key">Frontend data layer (<code>frontend/src/api.js</code>, Web SDK 29, no API key)</h3>
+<p>Every function works in both modes. In demo mode, writes change only in-memory data.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Function</th>
+<th>Appwrite call</th>
+<th>Who</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>listPublishedJobs()</code></td>
+<td><code>listRows(jobs, [equal review_status 'published', orderDesc last_seen_at])</code>, paged by 100</td>
+<td>public</td>
+</tr>
+<tr>
+<td><code>getJob(id)</code></td>
+<td><code>getRow(jobs, id)</code>; 401 or 404 returns <code>null</code></td>
+<td>public / reviewer</td>
+</tr>
+<tr>
+<td><code>listAppearances(jobId)</code></td>
+<td><code>listRows(job_appearances, [equal job_id, orderDesc publication_date])</code></td>
+<td>public / reviewer</td>
+</tr>
+<tr>
+<td><code>listRuns()</code></td>
+<td><code>listRows(ingestion_runs, [orderDesc started_at, limit 50])</code></td>
+<td>public</td>
+</tr>
+<tr>
+<td><code>cropUrl(appearance)</code></td>
+<td><code>storage.getFileView({bucketId:'ad_crops', fileId})</code></td>
+<td>public / reviewer</td>
+</tr>
+<tr>
+<td><code>currentReviewer()</code></td>
+<td><code>account.get()</code> + <code>teams.list()</code>; checks for team <code>reviewers</code></td>
+<td>reviewer</td>
+</tr>
+<tr>
+<td><code>login(email, password)</code> / <code>logout()</code></td>
+<td><code>account.createEmailPasswordSession</code> / <code>deleteSession('current')</code></td>
+<td>reviewer</td>
+</tr>
+<tr>
+<td><code>reviewQueue()</code></td>
+<td>jobs with <code>needs_review</code> + revisions with <code>pending</code></td>
+<td>reviewer</td>
+</tr>
+<tr>
+<td><code>publishJob(job, edits, who)</code></td>
+<td><code>updateRow(jobs, {...edits, review_status:'published', reviewed_by, reviewed_at}, publicPerms)</code> + every appearance and crop made public</td>
+<td>reviewer</td>
+</tr>
+<tr>
+<td><code>rejectJob(job, who)</code></td>
+<td><code>review_status:'rejected'</code>, private permissions on the job, its appearances and crops</td>
+<td>reviewer</td>
+</tr>
+<tr>
+<td><code>resolveRevision(rev, accept, who)</code></td>
+<td>revision gets <code>accepted</code> or <code>rejected</code>; on accept, the job gets <code>new_values</code>; <code>has_pending_revision</code> is recomputed</td>
+<td>reviewer</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="publisher-endpoints-used-o-heraldo-read-only">Publisher endpoints used (O Heraldo, read-only)</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>URL</th>
+<th>Response</th>
+<th>Use</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>GET /epaper/oheraldo/DD-MM-YYYY</code></td>
+<td>HTML (200), or 404 when not published</td>
+<td>Edition and page discovery</td>
+</tr>
+<tr>
+<td><code>GET /uploads/epaper/YYYY-MM/&lt;hash&gt;.jpg</code></td>
+<td>JPEG, about 1.8–6.4 MB</td>
+<td>Full page scan</td>
+</tr>
+<tr>
+<td><code>GET /uploads/epaper/YYYY-MM/thumbnail-{150,800}-&lt;hash&gt;.jpg</code></td>
+<td>JPEG</td>
+<td>Previews (not used by the pipeline)</td>
+</tr>
+<tr>
+<td><code>GET /epaper/oheraldo/&lt;id&gt;/page/N</code> + <code>X-Requested-With: XMLHttpRequest</code></td>
+<td>JSON <code>{data:{result:{ajax1, page, id, title, pagetitle}}}</code></td>
+<td>Not used; no section title is exposed</td>
+</tr>
+<tr>
+<td><code>GET /robots.txt</code></td>
+<td>Disallows only <code>/admin/</code></td>
+<td>Compliance</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="frontend">Frontend</h2>
+<p>The site is a single-page React app with four hash routes. <code>vite.config.js</code> sets <code>base: './'</code>, so <code>dist/</code> can be served from any path.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Route</th>
+<th>Page</th>
+<th>Who</th>
+<th>What it shows</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>#/</code></td>
+<td><code>Feed.jsx</code></td>
+<td>public</td>
+<td>Published jobs. Search covers title, employer, location, qualification, experience and the full ad text. Filters: location, deadline (any / not yet passed / has a deadline). Sort: most recently printed / closing soonest. Filtering happens in the client, sized for a few hundred listings</td>
+</tr>
+<tr>
+<td><code>#/job/&lt;id&gt;</code></td>
+<td><code>JobDetail.jsx</code></td>
+<td>public</td>
+<td>Fields, with "Not stated in ad" for unknown ones; deadline status; changed-details banner; "not independently verified" notice; evidence crop; OCR text; publication history with links to the e-paper</td>
+</tr>
+<tr>
+<td><code>#/review</code></td>
+<td><code>Review.jsx</code></td>
+<td><code>reviewers</code> team</td>
+<td>Login, then the queue: (1) pending revisions as old-vs-new tables with accept / keep; (2) new extractions with the crop, OCR text, uncertain-field flags and editable fields, then Publish or Reject. A deadline must be in <code>YYYY-MM-DD</code> format</td>
+</tr>
+<tr>
+<td><code>#/runs</code></td>
+<td><code>Runs.jsx</code></td>
+<td>public</td>
+<td>The last 50 ingestion runs, with status, counts and errors</td>
+</tr>
+</tbody>
+</table></div>
+<p>Deadline wording comes from <code>listingStatus()</code> in <code>format.js</code>. The site never claims that a vacancy is open or closed.</p>
+<ul>
+<li>A passed deadline shows "Deadline passed … may or may not still be open".</li>
+<li>With no deadline and a last appearance more than 30 days ago, it shows "Last advertised N days ago".</li>
+<li>Otherwise it shows "Apply by …", or "No deadline stated".</li>
+</ul>
+<p><strong>Demo mode:</strong> if <code>VITE_APPWRITE_ENDPOINT</code> or <code>VITE_APPWRITE_PROJECT_ID</code> is unset, the site reads <code>public/demo-data.json</code> and <code>public/crops/</code>. The review screen then needs no login, and its changes last only in memory. A yellow banner says so.</p>
+<p><strong>Accessibility:</strong> semantic landmarks, labelled form controls, visible focus rings, <code>aria-live</code> on the result count, controls at least 40 px tall, and a responsive layout down to phone width.</p>
+<h2 id="setup-and-deployment-runbook">Setup and deployment runbook</h2>
+<p>Going live takes four steps in this order: Appwrite, the first manual run, GitHub Actions, then the website. Steps marked <em>(owner)</em> need the project owner's accounts.</p>
+<h3 id="1-appwrite-project-owner">1. Appwrite project <em>(owner)</em></h3>
+<ol>
+<li>On <a href="https://cloud.appwrite.io">Appwrite Cloud</a>, create the project <code>Paper2Career</code>. Note the endpoint (e.g. <code>https://fra.cloud.appwrite.io/v1</code>) and the project ID.</li>
+<li>Create a server API key with these scopes: <code>databases.read/write</code>, <code>tables.read/write</code>, <code>columns.read/write</code>, <code>indexes.read/write</code>, <code>rows.read/write</code>, <code>buckets.read/write</code>, <code>files.read/write</code>, <code>teams.read/write</code>.</li>
+<li>Under Auth, enable Email/Password. Add a Web platform for each site hostname, including <code>localhost</code>.</li>
+<li>In <code>worker/</code>:</li>
+</ol>
+<pre><code>py -3.12 -m venv .venv
+.venv\Scripts\activate
+pip install -r requirements.txt
+copy .env.example .env
+python -m paper2career setup
+</code></pre>
+<p>Fill in <code>.env</code> before running <code>setup</code>.</p>
+<ol start="5">
+<li>Under Auth, create each reviewer's user, then add them to the team <code>reviewers</code>.</li>
+</ol>
+<h3 id="2-first-real-ingestion">2. First real ingestion</h3>
+<pre><code>python -m paper2career run --date 2026-10-23 --page 8 -v
+</code></pre>
+<p>Page 8 was the classifieds page on that date. Open the review screen and check the extracted jobs against the scanned ads before publishing.</p>
+<h3 id="3-daily-automation-owner">3. Daily automation <em>(owner)</em></h3>
+<ol>
+<li>Run <code>git init</code> in <code>paper2career/</code>, then push to a GitHub repository.</li>
+<li>Under <strong>Settings → Secrets and variables → Actions</strong>, add <code>APPWRITE_ENDPOINT</code>, <code>APPWRITE_PROJECT_ID</code> and <code>APPWRITE_API_KEY</code>.</li>
+<li>Under <strong>Actions → Paper2Career daily ingestion → Run workflow</strong>, run it once by hand. Optional inputs: <code>date</code> and a comma-separated <code>pages</code> list.</li>
+<li>The schedule then runs at 07:00, 10:00 and 14:00 IST. Downloaded pages and OCR results are cached between runs (<code>actions/cache</code>), so retries are cheap. GitHub can delay cron jobs by minutes.</li>
+</ol>
+<h3 id="4-website-owner">4. Website <em>(owner)</em></h3>
+<ol>
+<li>Create <code>frontend/.env.local</code> with <code>VITE_APPWRITE_ENDPOINT</code>, <code>VITE_APPWRITE_PROJECT_ID</code> and <code>VITE_APPWRITE_DATABASE_ID=paper2career_db</code>.</li>
+<li>Test locally with <code>npm install</code> then <code>npm run dev</code>. Build with <code>npm run build</code>, which writes <code>dist/</code>.</li>
+<li>Host it on Appwrite Sites, connected to the repository: root <code>frontend</code>, build command <code>npm run build</code>, output <code>dist</code>, with the same <code>VITE_*</code> variables. Then add that hostname as an Appwrite Web platform.</li>
+</ol>
+<h2 id="end-to-end-verification">End-to-end verification</h2>
+<p>The full pipeline ran automatically on two live O Heraldo editions (22 and 23 Oct 2026) on 23 Oct 2026. It found the right pages, stored 227 jobs and linked 124 of them across both days, using the local JSON store and Windows OCR. Appwrite, Tesseract and the GitHub workflow have <strong>not</strong> been exercised yet (section 12, items 1–5).</p>
+<h3 id="automated-tests">Automated tests</h3>
+<p><code>python -m pytest -q</code> in <code>worker/</code>: <strong>18 passed</strong>. These are the 8 SRS acceptance cases, extraction units, edition-discovery parsing, and 5 regressions found on real pages: subset-text false links, different-advertiser conflicts, salary change flagged, gap-filling without review, and suffixed booking numbers. The frontend builds with <code>npm run build</code>; it has no automated tests.</p>
+<h3 id="live-run-results">Live run results</h3>
+<p>Command: <code>python -m paper2career --local run --date 2026-10-22 --date 2026-10-23</code> (no page hints). It took 1 min 45 s with pages already cached.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Check</th>
+<th>22 Oct</th>
+<th>23 Oct</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Pages in edition</td>
+<td>14</td>
+<td>18</td>
+</tr>
+<tr>
+<td>Pages flagged by preview detection (markers)</td>
+<td>4 (5), 5 (4)</td>
+<td>8 (6); page 13 scored 1 and was skipped</td>
+</tr>
+<tr>
+<td>What those pages are</td>
+<td>4 = classifieds; 5 = news page with an APPOINTMENTS box of display ads</td>
+<td>8 = classifieds (printed as "classified 4")</td>
+</tr>
+<tr>
+<td>OCR lines</td>
+<td>1,220 + 670</td>
+<td>1,176</td>
+</tr>
+<tr>
+<td>Ads segmented</td>
+<td>162 + 31</td>
+<td>154</td>
+</tr>
+<tr>
+<td>Recruitment ads kept</td>
+<td>103 + 3</td>
+<td>89</td>
+</tr>
+<tr>
+<td>Jobs stored (multi-role ads split)</td>
+<td>183</td>
+<td>169</td>
+</tr>
+<tr>
+<td>Edition status</td>
+<td>PROCESSED</td>
+<td>PROCESSED</td>
+</tr>
+</tbody>
+</table></div>
+<p>Across both editions: 227 distinct jobs and 352 appearances. Of those appearances, 227 were <code>new</code>, 101 <code>exact</code>, 19 <code>repeat</code> (OCR noise) and 5 <code>probable</code>. 124 jobs were seen in both editions, and 6 revisions are pending review, all of them reasonable: an Accountant salary of 25,000 vs 20,000, three roles sharing an advertiser's phone, and an email garbled by OCR. None of the jobs are public.</p>
+<p>Field coverage of the 227 jobs: phone 213, location 182, employer 71, salary 40, qualification 29, deadline 1. 7 have no recognisable title, and 32 are flagged low confidence.</p>
+<h3 id="behaviours-verified-on-live-data">Behaviours verified on live data</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Behaviour</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Discovery of a dated edition; 404 for an unpublished date</td>
+<td>Pass (edition ids 1112 and 1114; 30 Oct returned <code>None</code>)</td>
+</tr>
+<tr>
+<td>Idempotent re-run</td>
+<td>Pass: a second run reports <code>NO_NEW_EDITION</code>; <code>--force</code> skipped all existing appearances, row counts unchanged</td>
+</tr>
+<tr>
+<td>Recovery from a partial edition</td>
+<td>Pass: a dropped connection left 22 Oct <code>PARTIAL</code>; the next run processed only the missing page (180 skipped, 9 new) and the status became <code>SUCCESS</code></td>
+</tr>
+<tr>
+<td>Evidence crop</td>
+<td>Pass: one JPEG per ad (195 files, 7.6 MB); the Riverfront Resort crop matches the print exactly</td>
+</tr>
+<tr>
+<td>Non-job sections excluded</td>
+<td>Pass: property, accommodation, vehicles, travel, matrimonial, the news article on the classifieds page, and the publisher's disclaimer are all rejected</td>
+</tr>
+<tr>
+<td>Demo site</td>
+<td>Pass: <code>vite preview</code> serves the page, <code>demo-data.json</code> (650 KB) and the crops</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="bugs-found-and-fixed-during-the-run">Bugs found and fixed during the run</h3>
+<ol>
+<li>Column gutters were missed because a headline crossed them. The threshold was raised from 4% to 10%.</li>
+<li>Reverse-printed headings were misread ("SITUATIONS VAUNT"). Fuzzy matching now applies to lines larger than body text.</li>
+<li>A bare "WANTED" display banner switched the section. It is now ignored in numbered layouts.</li>
+<li>"will <strong>be</strong> provided" was read as a B.E. degree. B.A., M.A. and B.E. now count only in capitals.</li>
+<li>Booking numbers with a suffix (<code>2026030842-1</code>) merged two ads.</li>
+<li><code>token_set_ratio</code> linked unrelated ads. Replaced by <code>ratio</code> plus the contact-conflict rule.</li>
+<li>A field that was previously unreadable created a review item. It now fills the gap silently.</li>
+<li>Large image downloads dropped. Up to 3 retries with backoff were added.</li>
+<li>Detection downloaded every full page (about 50 MB). It now screens 800 px previews, about 13 MB per edition.</li>
+<li>On news pages, an APPOINTMENTS heading pulled news stories into jobs. Headings are now limited to their column there, and news datelines are rejected.</li>
+<li>The CLI's <code>--local</code> swallowed the command name. It is now split into <code>--local</code> and <code>--local-db PATH</code>.</li>
+</ol>
+<h2 id="remaining-work-before-production">Remaining work before production</h2>
+<p>Six P0 items stand between the verified local pipeline and a live site. Four of them need the owner's Appwrite and GitHub accounts. Work through the table top to bottom.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>#</th>
+<th>Priority</th>
+<th>Task</th>
+<th>Done when</th>
+<th>Owner</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>P0</td>
+<td>Create the Appwrite project and key; run <code>python -m paper2career setup</code></td>
+<td>All 5 tables show every column as <code>available</code>; bucket <code>ad_crops</code> and team <code>reviewers</code> exist. Fix any SDK v26 surprises in <code>setup_appwrite.py</code></td>
+<td>owner + agent</td>
+</tr>
+<tr>
+<td>2</td>
+<td>P0</td>
+<td>First live run against Appwrite: <code>run --date 2026-10-23 --page 8</code></td>
+<td>168 jobs and 168 appearances in TablesDB; crops in the bucket; a re-run creates nothing</td>
+<td>agent</td>
+</tr>
+<tr>
+<td>3</td>
+<td>P0</td>
+<td>Check permissions end to end in a browser</td>
+<td>Logged out: feed is empty and <code>getRow</code> on a <code>needs_review</code> job returns 401/404. Reviewer: can publish, and the job, its appearances and its crop become readable by anyone. If Appwrite refuses a client setting <code>read("any")</code>, move <code>publishJob</code>, <code>rejectJob</code> and <code>resolveRevision</code> into an Appwrite Function that uses the API key</td>
+<td>agent</td>
+</tr>
+<tr>
+<td>4</td>
+<td>P0</td>
+<td><strong>Validate Tesseract on real pages</strong> (CI engine)</td>
+<td>Run the workflow by hand for 22 and 23 Oct; the expected pages are 4, 5 and 8. Compare its page detection, ad count and field counts with the Windows OCR baseline in section 11. Tune the reverse-printed heading fuzzing and the <code>CLASSIFIED_MARKERS</code> threshold if Tesseract reads differently. Tesseract has never run on these pages</td>
+<td>agent</td>
+</tr>
+<tr>
+<td>5</td>
+<td>P0</td>
+<td>Push to GitHub, add secrets, enable the schedule</td>
+<td>Three scheduled runs on one day: first <code>SUCCESS</code>, then <code>NO_NEW_EDITION</code> twice</td>
+<td>owner</td>
+</tr>
+<tr>
+<td>6</td>
+<td>P0</td>
+<td>Deploy the site (Appwrite Sites) and create reviewer accounts</td>
+<td>Public URL serves the feed; reviewers can log in</td>
+<td>owner</td>
+</tr>
+<tr>
+<td>7</td>
+<td>P1</td>
+<td>Ground-truth regression test</td>
+<td>Hand-label about 30 ads from the 23 Oct page 8 (title, phones, location). Add a test that fails if precision or recall drops. The OCR JSON for that page is cached under <code>worker/downloads/</code></td>
+<td>agent</td>
+</tr>
+<tr>
+<td>8</td>
+<td>P1</td>
+<td>Alerting</td>
+<td>GitHub notifies on a <code>FAILED</code> run (the job exits 1). Also make the 14:00 run exit non-zero when today is still <code>NO_NEW_EDITION</code></td>
+<td>agent</td>
+</tr>
+<tr>
+<td>9</td>
+<td>P1</td>
+<td>Stale <code>RUNNING</code> runs</td>
+<td>At start, mark any <code>RUNNING</code> run older than 2 h as <code>FAILED</code> ("worker killed")</td>
+<td>agent</td>
+</tr>
+<tr>
+<td>10</td>
+<td>P1</td>
+<td>Retry Appwrite 429/5xx with backoff in <code>AppwriteRepository</code></td>
+<td>A transient error doesn't fail a page</td>
+<td>agent</td>
+</tr>
+<tr>
+<td>11</td>
+<td>P1</td>
+<td>Legal and content check with O Heraldo</td>
+<td>Written OK, or a decision to show only the link rather than the stored crop. Until then, keep frontend/public/crops and demo-data.json (real ad scans and phone numbers) out of any public repository. The site already carries the publisher's "not verified" disclaimer</td>
+<td>owner</td>
+</tr>
+<tr>
+<td>12</td>
+<td>P1</td>
+<td>Rows with no title</td>
+<td>Reviewer sees the "Untitled vacancy" ads (7 of 227 across both editions) first. Display ads outside the classifieds (the APPOINTMENTS box) split into fragments: merge blocks that sit inside one ruled box; consider an LLM extraction pass for these</td>
+<td>agent</td>
+</tr>
+<tr>
+<td>13</td>
+<td>P2</td>
+<td>Server-side search</td>
+<td>Replace client-side filtering with the existing <code>search_text</code> fulltext index when listings pass about 1,000</td>
+<td>agent</td>
+</tr>
+<tr>
+<td>14</td>
+<td>P2</td>
+<td>Job seeker notifications (FR-12), more newspapers (new <code>source.py</code> adapter), Marathi edition</td>
+<td>—</td>
+<td>later</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Known extraction limits</strong> (from the real-page run): generic titles such as "Helper" and "Assistant" when an ad names no specific role; deadlines are rarely printed in these classifieds, so <code>deadline</code> is mostly null; reverse-printed headings like "TOURS &amp; TRAVELS" sometimes OCR as nonsense, in which case those ads inherit the previous section and rely on the keyword filter.</p>
+</main>
+</div>
+<script>
+document.querySelector('.theme-toggle').addEventListener('click', () => {
+  const r = document.documentElement;
+  const dark = r.dataset.theme ? r.dataset.theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+  r.dataset.theme = dark ? 'light' : 'dark';
+});
+</script>
+</body>
+</html>
