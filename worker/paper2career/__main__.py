@@ -57,6 +57,9 @@ def main(argv: list[str] | None = None) -> int:
     sync.add_argument("--local-db", type=Path, default=ROOT / "data" / "local_db.json")
     sync.add_argument("--crops-dir", type=Path, default=ROOT / "data" / "crops")
 
+    pru = sub.add_parser("prune", help="delete ad crops and records older than N days to save storage")
+    pru.add_argument("--days", type=int, default=7, help="retention window in days (default: 7)")
+
     args = ap.parse_args(argv)
     logging.basicConfig(level=logging.DEBUG if args.verbose else logging.INFO,
                         format="%(asctime)s %(levelname)s %(name)s: %(message)s")
@@ -182,6 +185,14 @@ def main(argv: list[str] | None = None) -> int:
             appwrite_repo.upsert("job_appearances", row_id, a, public=is_pub)
 
         print("\nAll data successfully synced to Appwrite Cloud!")
+        return 0
+
+    if args.cmd == "prune":
+        from .pipeline import Ingestor
+        from .source import HeraldoSource
+        pipe = Ingestor(repo)
+        res = pipe.prune_older_than(days=args.days)
+        print(f"Pruned {res['pruned_crops']} crops, {res['pruned_appearances']} appearances, {res['pruned_jobs']} jobs older than {res['cutoff']}")
         return 0
 
     return 2

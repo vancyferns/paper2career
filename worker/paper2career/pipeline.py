@@ -128,7 +128,61 @@ class Ingestor:
                 "notes": "\n".join(stats.notes)[:5000] or None, **summary,
             })
         log.info("Run %s finished: %s %s", run_id, status, summary)
+
+        # Automatically prune crops & records older than RETENTION_DAYS (default: 7) to keep storage minimal
+        try:
+            import os
+            retention_days = int(os.environ.get("RETENTION_DAYS", "7"))
+            self.prune_older_than(days=retention_days)
+        except Exception as exc:
+            log.warning("Auto-prune failed: %s", exc)
+
         return {"run_id": run_id, "status": status, **summary, "error": error}
+
+    def prune_older_than(self, days: int = 7) -> dict:
+        """Delete ad crops and appearances older than `days` to save storage in Appwrite."""
+        cutoff = (datetime.now(timezone.utc) - timedelta(days=days)).date().isoformat()
+        log.info("Pruning records older than %d days (cutoff: %s)", days, cutoff)
+
+        pruned_crops = 0
+        pruned_appearances = 0
+        pruned_jobs = 0
+        pruned_editions = 0
+
+        # 1. Prune job appearances and their ad crops from storage
+        for a in self.repo.all("job_appearances", limit=5000):
+            if (a.get("publication_date") or "") < cutoff:
+                crop_id = a.get("crop_file_id")
+                if crop_id:
+                    try:
+                        self.repo.delete_crop(crop_id)
+                        pruned_crops += 1
+                    except Exception as exc:
+                        log.debug("Crop delete skipped for %s: %s", crop_id, exc)
+                self.repo.delete("job_appearances", a["$id"])
+                pruned_appearances += 1
+
+        # 2. Prune jobs whose last appearance was before cutoff
+        for j in self.repo.all("jobs", limit=5000):
+            if (j.get("last_seen_at") or "") < cutoff:
+                self.repo.delete("jobs", j["$id"])
+                pruned_jobs += 1
+
+        # 3. Prune old editions
+        for e in self.repo.all("editions", limit=1000):
+            if (e.get("publication_date") or "") < cutoff:
+                self.repo.delete("editions", e["$id"])
+                pruned_editions += 1
+
+        res = {
+            "cutoff": cutoff,
+            "pruned_crops": pruned_crops,
+            "pruned_appearances": pruned_appearances,
+            "pruned_jobs": pruned_jobs,
+            "pruned_editions": pruned_editions,
+        }
+        log.info("Pruning complete: %s", res)
+        return res
 
     def process_edition(self, edition: EditionRef, stats: RunStats, only_pages: list[int] | None = None,
                         force: bool = False) -> None:

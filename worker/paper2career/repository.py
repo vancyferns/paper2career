@@ -23,8 +23,11 @@ class Repository:
     def find(self, table: str, field: str, value: Any, limit: int = 100) -> list[dict]: ...
     def find_since(self, table: str, field: str, since: str, limit: int = 1000) -> list[dict]: ...
     def all(self, table: str, limit: int = 5000) -> list[dict]: ...
+    def delete(self, table: str, row_id: str) -> bool: ...
     def save_crop(self, file_id: str, jpeg: bytes, public: bool = False) -> str | None:
         """Store an ad's evidence image. Returns a file id."""
+    def delete_crop(self, file_id: str) -> bool:
+        """Delete an ad's evidence image from storage."""
 
     def upsert(self, table: str, row_id: str, data: dict, public: bool | None = None) -> dict:
         if self.get(table, row_id) is None:
@@ -83,11 +86,26 @@ class LocalRepository(Repository):
     def all(self, table, limit=5000):
         return [dict(r) for r in list(self.data[table].values())[:limit]]
 
+    def delete(self, table, row_id):
+        if row_id in self.data[table]:
+            del self.data[table][row_id]
+            self._save()
+            return True
+        return False
+
     def save_crop(self, file_id, jpeg, public=False):
         crops = self.path.parent / "crops"
         crops.mkdir(parents=True, exist_ok=True)
         (crops / f"{file_id}.jpg").write_bytes(jpeg)
         return file_id
+
+    def delete_crop(self, file_id):
+        crops = self.path.parent / "crops"
+        crop_file = crops / f"{file_id}.jpg"
+        if crop_file.exists():
+            crop_file.unlink()
+            return True
+        return False
 
 
 # ---------------------------------------------------------------- Appwrite TablesDB
@@ -182,6 +200,17 @@ class AppwriteRepository(Repository):
     def all(self, table, limit=5000):
         return self._list(table, [], limit)
 
+    def delete(self, table, row_id):
+        from appwrite.exception import AppwriteException
+
+        try:
+            self.db.delete_row(database_id=self.database_id, table_id=table, row_id=row_id)
+            return True
+        except AppwriteException as exc:
+            if exc.code == 404:
+                return False
+            raise
+
     def save_crop(self, file_id, jpeg, public=False):
         from appwrite.exception import AppwriteException
         from appwrite.input_file import InputFile
@@ -194,6 +223,17 @@ class AppwriteRepository(Repository):
             if exc.code != 409:      # already uploaded by an earlier run
                 raise
         return file_id
+
+    def delete_crop(self, file_id):
+        from appwrite.exception import AppwriteException
+
+        try:
+            self.storage.delete_file(bucket_id=CROPS_BUCKET, file_id=file_id)
+            return True
+        except AppwriteException as exc:
+            if exc.code == 404:
+                return False
+            raise
 
 
 def open_repository(local_path: Path | None = None) -> Repository:
