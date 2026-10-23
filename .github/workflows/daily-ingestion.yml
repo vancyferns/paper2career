@@ -61,6 +61,7 @@ jobs:
           APPWRITE_ENDPOINT: ${{ secrets.APPWRITE_ENDPOINT }}
           APPWRITE_PROJECT_ID: ${{ secrets.APPWRITE_PROJECT_ID }}
           APPWRITE_API_KEY: ${{ secrets.APPWRITE_API_KEY }}
+          APPWRITE_DATABASE_ID: ${{ secrets.APPWRITE_DATABASE_ID || '6adbb053000fa129e183' }}
           AUTO_PUBLISH: "true"
           OCR_ENGINE: tesseract
           INPUT_DATE: ${{ inputs.date }}
