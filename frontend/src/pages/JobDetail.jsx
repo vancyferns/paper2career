@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import { getJob, listAppearances } from '../api.js';
 import { fmtDate, listingStatus, cleanPhone, phoneDialUrl, UNKNOWN } from '../format.js';
 import AdCrop from '../components/AdCrop.jsx';
+import { PhoneIcon, WhatsAppIcon, MailIcon } from '../components/Icons.jsx';
 
 export default function JobDetail({ id }) {
   const [job, setJob] = useState(undefined);
@@ -53,7 +54,7 @@ export default function JobDetail({ id }) {
               return (
                 <div key={phone} className="phone-btn-group">
                   <a href={phoneDialUrl(phone)} className="btn-direct btn-direct-call">
-                    ?? Call {phone}
+                    <PhoneIcon /> Call {phone}
                   </a>
                   {clean.length === 12 && (
                     <a
@@ -62,7 +63,7 @@ export default function JobDetail({ id }) {
                       rel="noreferrer"
                       className="btn-direct btn-direct-wa"
                     >
-                      ?? WhatsApp
+                      <WhatsAppIcon /> WhatsApp
                     </a>
                   )}
                 </div>
@@ -74,7 +75,7 @@ export default function JobDetail({ id }) {
                 href={`mailto:${email}?subject=${encodeURIComponent(`Application for ${job.title}`)}&body=${encodeURIComponent(`Dear Hiring Team,\n\nI am writing to apply for the ${job.title} position advertised in ${job.newspaper}.\n\nBest regards,\n`)}`}
                 className="btn-direct btn-direct-email"
               >
-                ?? Email ({email})
+                <MailIcon /> Email ({email})
               </a>
             ))}
           </div>
@@ -91,14 +92,14 @@ export default function JobDetail({ id }) {
           {field('Phone', (job.contact_phones || []).length > 0 ? (
             <span className="field-links">
               {job.contact_phones.map((p) => (
-                <a key={p} href={phoneDialUrl(p)} className="field-click-link">?? {p}</a>
+                <a key={p} href={phoneDialUrl(p)} className="field-click-link"><PhoneIcon size={13} /> {p}</a>
               ))}
             </span>
           ) : null)}
           {field('Email', (job.contact_emails || []).length > 0 ? (
             <span className="field-links">
               {job.contact_emails.map((e) => (
-                <a key={e} href={`mailto:${e}`} className="field-click-link">?? {e}</a>
+                <a key={e} href={`mailto:${e}`} className="field-click-link"><MailIcon size={13} /> {e}</a>
               ))}
             </span>
           ) : null)}

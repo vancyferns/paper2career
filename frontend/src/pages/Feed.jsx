@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useState } from 'react';
+﻿import { useEffect, useMemo, useState } from 'react';
 import { listPublishedJobs } from '../api.js';
-import { daysBetween, fmtDate, listingStatus, today } from '../format.js';
+import { daysBetween, fmtDate, listingStatus, cleanPhone, phoneDialUrl, today } from '../format.js';
+import { PhoneIcon, WhatsAppIcon, MailIcon } from '../components/Icons.jsx';
 
 const norm = (s) => (s || '').toLowerCase();
 
@@ -284,6 +285,9 @@ export default function Feed() {
 
 function JobCard({ job }) {
   const status = listingStatus(job);
+  const phones = job.contact_phones || [];
+  const emails = job.contact_emails || [];
+
   return (
     <li className="card job-card">
       <a href={`#/job/${job.$id}`} className="job-link">
@@ -319,6 +323,42 @@ function JobCard({ job }) {
           {job.has_pending_revision && <span className="pill warn small">Details updated</span>}
         </p>
       </a>
+
+      {(phones.length > 0 || emails.length > 0) && (
+        <div className="card-contact-bar">
+          {phones.slice(0, 2).map((phone) => {
+            const clean = cleanPhone(phone);
+            return (
+              <span key={phone} className="contact-pill-pair">
+                <a href={phoneDialUrl(phone)} className="contact-pill pill-call" title={`Call ${phone}`}>
+                  <PhoneIcon size={12} /> Call
+                </a>
+                {clean.length === 12 && (
+                  <a
+                    href={`https://wa.me/${clean}?text=${encodeURIComponent(`Hi, I saw your vacancy for "${job.title}" in ${job.newspaper}.`)}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="contact-pill pill-wa"
+                    title="Message on WhatsApp"
+                  >
+                    <WhatsAppIcon size={12} /> WhatsApp
+                  </a>
+                )}
+              </span>
+            );
+          })}
+          {emails.slice(0, 1).map((email) => (
+            <a
+              key={email}
+              href={`mailto:${email}?subject=${encodeURIComponent(`Application: ${job.title}`)}`}
+              className="contact-pill pill-email"
+              title={`Email ${email}`}
+            >
+              <MailIcon size={12} /> Email
+            </a>
+          ))}
+        </div>
+      )}
     </li>
   );
 }
