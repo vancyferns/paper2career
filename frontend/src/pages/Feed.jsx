@@ -76,9 +76,6 @@ export default function Feed() {
       } else if (dateRange === 'week') {
         const diff = daysBetween(j.last_seen_at, refDate);
         if (diff > 7 || diff < 0) return false;
-      } else if (dateRange === 'month') {
-        const diff = daysBetween(j.last_seen_at, refDate);
-        if (diff > 30 || diff < 0) return false;
       } else if (dateRange !== 'all') {
         if (j.last_seen_at !== dateRange) return false;
       }
@@ -155,13 +152,7 @@ export default function Feed() {
           >
             Past Week {weekCount > 0 ? `(${weekCount})` : ''}
           </button>
-          <button
-            type="button"
-            className={`tab-btn ${dateRange === 'month' ? 'active' : ''}`}
-            onClick={() => setDateRange('month')}
-          >
-            This Month
-          </button>
+
           <button
             type="button"
             className={`tab-btn ${dateRange === 'all' ? 'active' : ''}`}
@@ -181,7 +172,7 @@ export default function Feed() {
                   <option value="today">Today&rsquo;s Edition ({latestDate ? fmtDate(latestDate) : 'Latest'})</option>
                   <option value="yesterday">Past 2 Days (Yesterday & Today)</option>
                   <option value="week">Past Week (Last 7 Days)</option>
-                  <option value="month">Past Month (Last 30 Days)</option>
+
                   <option value="all">All Dates ({jobs?.length || 0})</option>
                   {availableDates.length > 0 && (
                     <optgroup label="Specific Edition Date">
