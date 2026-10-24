@@ -10,16 +10,35 @@ import { InstallBanner, usePWAInstall, InstallGuideModal } from './components/In
 import Footer from './components/Footer.jsx';
 
 function useHashRoute() {
-  const [hash, setHash] = useState(window.location.hash || '#/');
+  const getRoute = () => {
+    // 1. Support Googlebot / canonical query URLs (e.g. ?job=123)
+    const params = new URLSearchParams(window.location.search);
+    const jobParam = params.get('job');
+    if (jobParam) return ['job', jobParam];
+    const pageParam = params.get('page');
+    if (pageParam) return [pageParam, params.get('id')].filter(Boolean);
+
+    // 2. Default to hash routing (#/job/123)
+    const hash = window.location.hash || '#/';
+    return hash.slice(1).split('/').filter(Boolean);
+  };
+
+  const [route, setRoute] = useState(getRoute);
+
   useEffect(() => {
     const on = () => {
-      setHash(window.location.hash || '#/');
+      setRoute(getRoute());
       window.scrollTo(0, 0);
     };
     window.addEventListener('hashchange', on);
-    return () => window.removeEventListener('hashchange', on);
+    window.addEventListener('popstate', on);
+    return () => {
+      window.removeEventListener('hashchange', on);
+      window.removeEventListener('popstate', on);
+    };
   }, []);
-  return hash.slice(1).split('/').filter(Boolean);
+
+  return route;
 }
 
 export default function App() {

@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { getJob, listAppearances } from '../api.js';
 import { fmtDate, listingStatus, cleanPhone, phoneDialUrl, UNKNOWN } from '../format.js';
 import { shareJob, toggleSaved, useSaved } from '../store.js';
@@ -35,6 +35,54 @@ export default function JobDetail({ id }) {
     const t = setTimeout(() => setToast(null), 2200);
     return () => clearTimeout(t);
   }, [toast]);
+
+  // Dynamic SEO & Google JobPosting Structured Data for Google for Jobs
+  useEffect(() => {
+    if (!job) return undefined;
+
+    const prevTitle = document.title;
+    document.title = `${job.title} in ${job.location || 'Goa'} · Paper2Career`;
+
+    const descMeta = document.querySelector('meta[name="description"]');
+    const prevDesc = descMeta ? descMeta.getAttribute('content') : '';
+    const jobDesc = `${job.title} at ${job.employer || 'Goa'}. ${job.description ? job.description.slice(0, 140) : ''}... Direct Call & WhatsApp contact on Paper2Career.`;
+    if (descMeta) descMeta.setAttribute('content', jobDesc);
+
+    const script = document.createElement('script');
+    script.type = 'application/ld+json';
+    script.id = 'schema-jobposting';
+    script.text = JSON.stringify({
+      '@context': 'https://schema.org',
+      '@type': 'JobPosting',
+      title: job.title,
+      description: job.description || job.title,
+      datePosted: job.first_seen_at || new Date().toISOString().split('T')[0],
+      validThrough: job.deadline ? `${job.deadline}T23:59:59Z` : undefined,
+      employmentType: 'FULL_TIME',
+      hiringOrganization: {
+        '@type': 'Organization',
+        name: job.employer || 'Private Classified Advertiser (Goa)',
+      },
+      jobLocation: {
+        '@type': 'Place',
+        address: {
+          '@type': 'PostalAddress',
+          addressLocality: job.location || 'Goa',
+          addressRegion: 'Goa',
+          addressCountry: 'IN',
+        },
+      },
+      directApply: true,
+    });
+    document.head.appendChild(script);
+
+    return () => {
+      document.title = prevTitle;
+      if (descMeta && prevDesc) descMeta.setAttribute('content', prevDesc);
+      const el = document.getElementById('schema-jobposting');
+      if (el) el.remove();
+    };
+  }, [job]);
 
   if (error) return <p className="error" role="alert">{error}</p>;
   if (job === undefined) return <DetailSkeleton />;
