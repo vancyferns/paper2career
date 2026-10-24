@@ -99,7 +99,8 @@ class Ingestor:
         status, error = "FAILED", None
         try:
             today = datetime.now(IST).date()
-            days = days or [today - timedelta(days=n) for n in range(settings.lookback_days - 1, -1, -1)]
+            # Fetch and process today's edition first
+            days = days or [today - timedelta(days=n) for n in range(settings.lookback_days)]
             for day in days:
                 stats.editions_checked += 1
                 edition_id = f"ed_{settings.source_alias}-{day.isoformat()}"[:36]
