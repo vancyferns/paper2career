@@ -1,4 +1,4 @@
-"""Daily ingestion: discover -> acquire -> OCR -> classify -> extract -> match -> store -> log."""
+﻿"""Daily ingestion: discover -> acquire -> OCR -> classify -> extract -> match -> store -> log."""
 from __future__ import annotations
 
 import hashlib
@@ -102,6 +102,13 @@ class Ingestor:
             days = days or [today - timedelta(days=n) for n in range(settings.lookback_days - 1, -1, -1)]
             for day in days:
                 stats.editions_checked += 1
+                edition_id = f"ed_{settings.source_alias}-{day.isoformat()}"[:36]
+                existing = self.repo.get("editions", edition_id)
+                if existing and existing.get("status") in ("PROCESSED", "NO_RECRUITMENT_FOUND") and not force:
+                    log.info("Edition %s already processed; skipping", edition_id)
+                    stats.skipped_existing += 1
+                    continue
+
                 edition = self.source.find_edition(day)
                 if edition is None:
                     log.info("No %s edition published for %s (yet)", settings.newspaper_name, day)
