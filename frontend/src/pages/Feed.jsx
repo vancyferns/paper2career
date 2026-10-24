@@ -289,12 +289,12 @@ function Hero({ jobs, latestDate, stats }) {
           {jobs ? `${fmtDate(latestDate)} edition is in` : 'Fetching today’s edition'}
         </span>
         <h1>
-          Find <span className="rotator"><span key={word} className="grad-text">{word}</span></span>
-          <br />in Goa, from this morning’s paper.
+          Jobs in Goa: <span className="rotator"><span key={word} className="grad-text">{word}</span></span>
+          <br />from this morning’s newspaper.
         </h1>
         <p className="lede">
-          Jobs in Goa from every recruitment classified in O Heraldo, digitised daily with the original newspaper
-          clipping. Call or WhatsApp the employer in one tap.
+          Newspaper jobs in Goa from every classified ad in O Heraldo and local press, digitised daily with the original newspaper
+          clipping. Call or WhatsApp employers directly in one tap.
         </p>
       </div>
 
