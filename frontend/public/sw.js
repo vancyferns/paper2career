@@ -1,8 +1,11 @@
-const CACHE_NAME = 'paper2career-v2';
+const CACHE_NAME = 'paper2career-v3';
 const CORE_ASSETS = [
   './',
   './index.html',
+  './favicon.ico',
   './favicon.png',
+  './favicon-48x48.png',
+  './favicon-96x96.png',
   './logo.png',
   './apple-touch-icon.png',
   './icon-192.png',

@@ -40,14 +40,21 @@
     <meta name="twitter:image" content="https://paper2career.vercel.app/logo.png" />
 
     <!-- PWA & Mobile Icons -->
+    <meta name="application-name" content="Paper2Career" />
+    <meta name="apple-mobile-web-app-title" content="Paper2Career" />
     <meta name="theme-color" content="#0b0b10" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="Paper2Career" />
-    <link rel="manifest" href="./manifest.json" />
-    <link rel="icon" type="image/png" href="./favicon.png" />
-    <link rel="apple-touch-icon" href="./apple-touch-icon.png" />
+
+    <!-- Google Search Favicon & Standard Icons (Multiple of 48px rule) -->
+    <link rel="shortcut icon" href="/favicon.ico" />
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+    <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48x48.png" />
+    <link rel="icon" type="image/png" sizes="96x96" href="/favicon-96x96.png" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/manifest.json" />
     <meta name="color-scheme" content="dark" />
 
     <!-- Google Structured Data (JSON-LD) -->
@@ -59,7 +66,8 @@
           "@type": "WebSite",
           "@id": "https://paper2career.vercel.app/#website",
           "url": "https://paper2career.vercel.app/",
-          "name": "Paper2Career · Jobs in Goa",
+          "name": "Paper2Career",
+          "alternateName": ["Paper2Career", "Paper 2 Career", "Paper2Career Goa"],
           "description": "Daily newspaper classified job vacancies in Goa with direct 1-tap Call and WhatsApp contact.",
           "inLanguage": "en-IN",
           "potentialAction": {
