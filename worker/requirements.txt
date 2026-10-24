@@ -1,4 +1,5 @@
 requests>=2.32
+curl-cffi>=0.7
 beautifulsoup4>=4.12
 pymupdf>=1.24
 pytesseract>=0.3.10

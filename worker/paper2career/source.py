@@ -21,7 +21,12 @@ from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
 
-import requests
+try:
+    from curl_cffi import requests
+    _CURL_CFFI = True
+except ImportError:
+    import requests
+    _CURL_CFFI = False
 from bs4 import BeautifulSoup
 
 from .config import settings
@@ -64,23 +69,18 @@ class AcquiredPage:
 
 
 class HeraldoSource:
-    def __init__(self, session: requests.Session | None = None):
+    def __init__(self, session=None):
         self.base = settings.source_base_url
         self.alias = settings.source_alias
-        self.session = session or requests.Session()
-        self.session.headers.update({
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
-            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
-            "Accept-Language": "en-US,en;q=0.9",
-            "Sec-Ch-Ua": '"Chromium";v="124", "Google Chrome";v="124"',
-            "Sec-Ch-Ua-Mobile": "?0",
-            "Sec-Ch-Ua-Platform": '"Windows"',
-            "Sec-Fetch-Dest": "document",
-            "Sec-Fetch-Mode": "navigate",
-            "Sec-Fetch-Site": "none",
-            "Sec-Fetch-User": "?1",
-            "Upgrade-Insecure-Requests": "1",
-        })
+        if session is not None:
+            self.session = session
+        elif _CURL_CFFI:
+            self.session = requests.Session(impersonate="chrome120")
+        else:
+            self.session = requests.Session()
+            self.session.headers.update({
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+            })
         self._last_request = 0.0
 
     def _get(self, url: str, **kwargs) -> requests.Response:
