@@ -638,14 +638,14 @@ mark { background: rgba(253,54,110,.18); color: var(--ink); padding: .05em .3em;
   .run-stats { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .fields { grid-template-columns: 1fr; }
 
-  .has-action-bar { padding-bottom: calc(96px + env(safe-area-inset-bottom)); }
+  .has-action-bar { padding-bottom: calc(110px + env(safe-area-inset-bottom)); }
+  .site-footer.has-action-bar { display: none; }
   .action-bar {
-    position: fixed; z-index: 40; left: 0; right: 0; bottom: 0; display: flex; gap: .5rem;
+    position: fixed; z-index: 50; left: 0; right: 0; bottom: 0; display: flex; gap: .5rem;
     padding: .75rem 14px calc(.75rem + env(safe-area-inset-bottom));
-    background: rgba(11, 11, 16, 0.96);
+    background: #0b0b10 !important;
     border-top: 1px solid var(--line-2);
-    box-shadow: 0 -12px 32px rgba(0, 0, 0, 0.85);
-    backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+    box-shadow: 0 -16px 36px rgba(0, 0, 0, 0.95);
     animation: slide-up .4s var(--ease) both;
   }
   .action-bar .btn { min-height: 50px; font-size: 1rem; border-radius: 16px; font-weight: 600; }
