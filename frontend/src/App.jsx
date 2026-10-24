@@ -1,4 +1,4 @@
-﻿import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { DEMO } from './api.js';
 import { useSaved, visit } from './store.js';
 import Feed from './pages/Feed.jsx';
@@ -6,7 +6,7 @@ import JobDetail from './pages/JobDetail.jsx';
 import Review from './pages/Review.jsx';
 import Runs from './pages/Runs.jsx';
 import { FlameIcon, HeartIcon, HomeIcon, DownloadIcon } from './components/Icons.jsx';
-import { InstallBanner, usePWAInstall } from './components/InstallPrompt.jsx';
+import { InstallBanner, usePWAInstall, InstallGuideModal } from './components/InstallPrompt.jsx';
 
 function useHashRoute() {
   const [hash, setHash] = useState(window.location.hash || '#/');
@@ -96,7 +96,7 @@ export default function App() {
 function Menu({ tabs, route }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
-  const { isInstalled, install } = usePWAInstall();
+  const { isInstalled, isIOS, isAndroid, guideOpen, setGuideOpen, triggerInstall } = usePWAInstall();
 
   useEffect(() => { setOpen(false); }, [route]);
   useEffect(() => {
@@ -110,37 +110,47 @@ function Menu({ tabs, route }) {
 
   const savedCount = tabs.find(([href]) => href === '#/saved')?.[4];
   return (
-    <div className="menu" ref={ref}>
-      <button type="button" className={`burger ${open ? 'open' : ''}`} onClick={() => setOpen(!open)}
-              aria-expanded={open} aria-controls="main-menu" aria-label={open ? 'Close menu' : 'Open menu'}>
-        <span /><span /><span />
-        {!open && savedCount ? <span className="burger-dot" aria-hidden="true" /> : null}
-      </button>
-      {open && (
-        <nav id="main-menu" className="menu-panel" aria-label="Main">
-          {tabs.map(([href, label, Icon, active, n], i) => (
-            <a key={href} href={href} aria-current={active ? 'page' : undefined} style={{ '--i': i }}
-               onClick={() => setOpen(false)}>
-              <Icon size={18} filled={label === 'Saved' && active} />
-              <span>{label}</span>
-              {n ? <span className="nav-n">{n}</span> : null}
-            </a>
-          ))}
-          {!isInstalled && (
-            <button
-              type="button"
-              className="menu-install-btn"
-              onClick={() => {
-                setOpen(false);
-                install();
-              }}
-            >
-              <DownloadIcon size={18} />
-              <span>Install App</span>
-            </button>
-          )}
-        </nav>
+    <>
+      <div className="menu" ref={ref}>
+        <button type="button" className={`burger ${open ? 'open' : ''}`} onClick={() => setOpen(!open)}
+                aria-expanded={open} aria-controls="main-menu" aria-label={open ? 'Close menu' : 'Open menu'}>
+          <span /><span /><span />
+          {!open && savedCount ? <span className="burger-dot" aria-hidden="true" /> : null}
+        </button>
+        {open && (
+          <nav id="main-menu" className="menu-panel" aria-label="Main">
+            {tabs.map(([href, label, Icon, active, n], i) => (
+              <a key={href} href={href} aria-current={active ? 'page' : undefined} style={{ '--i': i }}
+                 onClick={() => setOpen(false)}>
+                <Icon size={18} filled={label === 'Saved' && active} />
+                <span>{label}</span>
+                {n ? <span className="nav-n">{n}</span> : null}
+              </a>
+            ))}
+            {!isInstalled && (
+              <button
+                type="button"
+                className="menu-install-btn"
+                onClick={() => {
+                  setOpen(false);
+                  triggerInstall();
+                }}
+              >
+                <DownloadIcon size={18} />
+                <span>Install App</span>
+              </button>
+            )}
+          </nav>
+        )}
+      </div>
+
+      {guideOpen && (
+        <InstallGuideModal
+          isIOS={isIOS}
+          isAndroid={isAndroid}
+          onClose={() => setGuideOpen(false)}
+        />
       )}
-    </div>
+    </>
   );
 }

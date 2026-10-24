@@ -1,9 +1,10 @@
 ﻿{
-  "name": "Paper2Career · Newspaper Jobs in Goa",
+  "id": "/",
+  "name": "Paper2Career · Jobs in Goa",
   "short_name": "Paper2Career",
   "description": "Daily newspaper classified job vacancies in Goa. Direct 1-tap Call and WhatsApp contact with employers.",
-  "start_url": "./",
-  "scope": "./",
+  "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#0b0b10",
   "theme_color": "#0b0b10",
@@ -11,20 +12,28 @@
   "categories": ["business", "jobs", "productivity"],
   "icons": [
     {
-      "src": "./favicon.png",
-      "sizes": "64x64",
-      "type": "image/png"
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
     },
     {
-      "src": "./apple-touch-icon.png",
-      "sizes": "180x180",
-      "type": "image/png"
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
     },
     {
-      "src": "./logo.png",
+      "src": "/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ]
 }
