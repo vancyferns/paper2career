@@ -1,11 +1,12 @@
-import { useEffect, useRef, useState } from 'react';
+﻿import { useEffect, useRef, useState } from 'react';
 import { DEMO } from './api.js';
 import { useSaved, visit } from './store.js';
 import Feed from './pages/Feed.jsx';
 import JobDetail from './pages/JobDetail.jsx';
 import Review from './pages/Review.jsx';
 import Runs from './pages/Runs.jsx';
-import { FlameIcon, HeartIcon, HomeIcon } from './components/Icons.jsx';
+import { FlameIcon, HeartIcon, HomeIcon, DownloadIcon } from './components/Icons.jsx';
+import { InstallBanner, usePWAInstall } from './components/InstallPrompt.jsx';
 
 function useHashRoute() {
   const [hash, setHash] = useState(window.location.hash || '#/');
@@ -87,6 +88,7 @@ export default function App() {
         </div>
       </footer>
 
+      <InstallBanner />
     </>
   );
 }
@@ -94,6 +96,7 @@ export default function App() {
 function Menu({ tabs, route }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
+  const { isInstalled, install } = usePWAInstall();
 
   useEffect(() => { setOpen(false); }, [route]);
   useEffect(() => {
@@ -123,6 +126,19 @@ function Menu({ tabs, route }) {
               {n ? <span className="nav-n">{n}</span> : null}
             </a>
           ))}
+          {!isInstalled && (
+            <button
+              type="button"
+              className="menu-install-btn"
+              onClick={() => {
+                setOpen(false);
+                install();
+              }}
+            >
+              <DownloadIcon size={18} />
+              <span>Install App</span>
+            </button>
+          )}
         </nav>
       )}
     </div>

@@ -1,4 +1,4 @@
-﻿const base = { display: 'inline-block', verticalAlign: '-2px', flexShrink: 0 };
+const base = { display: 'inline-block', verticalAlign: '-2px', flexShrink: 0 };
 
 function Stroke({ size = 16, style = {}, children, width = 2 }) {
   return (
@@ -53,3 +53,5 @@ export function HeartIcon({ filled, ...p }) {
 export function FlameIcon(p) {
   return <Stroke {...p}><path d="M12 22c4 0 7-3 7-7 0-4-3-6-4-10-2 2-3 4-3 6-1-1-2-2-2-4-3 2-5 5-5 8 0 4 3 7 7 7z" /></Stroke>;
 }
+
+export const DownloadIcon = (p) => <Stroke {...p}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" /></Stroke>;
