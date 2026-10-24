@@ -1,4 +1,4 @@
-"""Acceptance tests from SRS section 8, run against synthetic OCR output and a fake e-paper source."""
+﻿"""Acceptance tests from SRS section 8, run against synthetic OCR output and a fake e-paper source."""
 from datetime import date
 from pathlib import Path
 
@@ -72,6 +72,7 @@ def setup(tmp_path, monkeypatch):
     monkeypatch.setattr(pipeline, "page_lines", lambda path, checksum: editions[date.fromisoformat(checksum[9:])])
     monkeypatch.setattr(pipeline, "_page_size", lambda path: (3000, 4000))
     monkeypatch.setattr(pipeline, "looks_like_classifieds", lambda path: True)
+    object.__setattr__(pipeline.settings, "auto_publish", False)
     repo = LocalRepository(tmp_path / "db.json")
     return repo, editions
 
