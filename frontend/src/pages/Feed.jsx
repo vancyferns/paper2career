@@ -1,7 +1,8 @@
-﻿import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { listPublishedJobs } from '../api.js';
 import { daysBetween, fmtDate, listingStatus, cleanPhone, phoneDialUrl, today } from '../format.js';
 import { CATEGORIES, matchesCategory } from '../categories.js';
+import { scoreJob } from '../search.js';
 import { toggleSaved, useSaved, visit } from '../store.js';
 import { spotlight, useCountUp, useReveal, useRotating } from '../motion.js';
 import {
@@ -69,34 +70,55 @@ export default function Feed({ savedOnly = false }) {
   // Everything except the category, so the category dropdown can show counts for the current selection.
   const base = useMemo(() => {
     if (!jobs) return [];
-    const terms = norm(q).split(/\s+/).filter(Boolean);
     const t = today();
     const refDate = latestDate || t;
-    const out = jobs.filter((j) => {
-      if (savedOnly && !saved.has(j.$id)) return false;
-      const hay = norm([j.title, j.employer, j.location, j.qualification, j.experience, j.description].join(' '));
-      if (!terms.every((term) => hay.includes(term))) return false;
-      if (location && j.location !== location) return false;
-      if (deadline === 'open' && j.deadline && j.deadline < t) return false;
-      if (deadline === 'has' && !j.deadline) return false;
-      if (savedOnly) return true;
+    const hasQuery = Boolean(q.trim());
 
-      if (dateRange === 'today') {
-        if (j.last_seen_at !== refDate) return false;
-      } else if (dateRange === 'yesterday') {
-        const diff = daysBetween(j.last_seen_at, refDate);
-        if (diff > 1 || diff < 0) return false;
-      } else if (dateRange === 'week') {
-        const diff = daysBetween(j.last_seen_at, refDate);
-        if (diff > 7 || diff < 0) return false;
-      } else if (dateRange !== 'all') {
-        if (j.last_seen_at !== dateRange) return false;
+    const scoredJobs = [];
+
+    for (const j of jobs) {
+      if (savedOnly && !saved.has(j.$id)) continue;
+
+      let score = 0;
+      if (hasQuery) {
+        const res = scoreJob(j, q);
+        if (!res.matches) continue;
+        score = res.score;
       }
-      return true;
-    });
-    const key = sort === 'deadline' ? (j) => j.deadline || '9999' : (j) => j.last_seen_at || '';
-    out.sort((a, b) => (sort === 'deadline' ? key(a).localeCompare(key(b)) : key(b).localeCompare(key(a))));
-    return out;
+
+      if (location && j.location !== location) continue;
+      if (deadline === 'open' && j.deadline && j.deadline < t) continue;
+      if (deadline === 'has' && !j.deadline) continue;
+
+      if (!savedOnly) {
+        if (dateRange === 'today') {
+          if (j.last_seen_at !== refDate) continue;
+        } else if (dateRange === 'yesterday') {
+          const diff = daysBetween(j.last_seen_at, refDate);
+          if (diff > 1 || diff < 0) continue;
+        } else if (dateRange === 'week') {
+          const diff = daysBetween(j.last_seen_at, refDate);
+          if (diff > 7 || diff < 0) continue;
+        } else if (dateRange !== 'all') {
+          if (j.last_seen_at !== dateRange) continue;
+        }
+      }
+
+      scoredJobs.push({ job: j, score });
+    }
+
+    // When searching, sort by search relevance score first, then newest date
+    if (hasQuery && sort === 'recent') {
+      scoredJobs.sort((a, b) => {
+        if (b.score !== a.score) return b.score - a.score;
+        return (b.job.last_seen_at || '').localeCompare(a.job.last_seen_at || '');
+      });
+    } else {
+      const key = sort === 'deadline' ? (j) => j.deadline || '9999' : (j) => j.last_seen_at || '';
+      scoredJobs.sort((a, b) => (sort === 'deadline' ? key(a.job).localeCompare(key(b.job)) : key(b.job).localeCompare(key(a.job))));
+    }
+
+    return scoredJobs.map((item) => item.job);
   }, [jobs, q, location, deadline, sort, dateRange, latestDate, savedOnly, saved]);
 
   const categoryCounts = useMemo(
@@ -218,11 +240,21 @@ export default function Feed({ savedOnly = false }) {
             </>
           ) : (
             <>
-              <h3>No matches</h3>
-              <p>Try a different word or widen the date range.</p>
-              <button type="button" className="btn primary" onClick={() => { setQ(''); resetFilters(); setDateRange('all'); }}>
-                Show all {jobs.length} jobs
-              </button>
+              <h3>No matches found</h3>
+              <p>
+                {dateRange !== 'all'
+                  ? `No matching jobs found in this edition. Try searching across all newspaper editions.`
+                  : 'Try typing a partial role, town, or keyword (e.g. "drv", "acc", "cook", "panjim").'}
+              </p>
+              {dateRange !== 'all' ? (
+                <button type="button" className="btn primary" onClick={() => setDateRange('all')}>
+                  Search all {jobs.length} newspaper jobs
+                </button>
+              ) : (
+                <button type="button" className="btn primary" onClick={() => { setQ(''); resetFilters(); }}>
+                  Reset search &amp; filters
+                </button>
+              )}
             </>
           )}
         </div>
