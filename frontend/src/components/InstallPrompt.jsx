@@ -143,7 +143,7 @@ export function InstallGuideModal({ isIOS, isAndroid, onClose }) {
   );
 }
 
-export function InstallBanner() {
+export function InstallBanner({ hide = false } = {}) {
   const { isInstalled, isIOS, isAndroid, guideOpen, setGuideOpen, triggerInstall } = usePWAInstall();
   const [dismissed, setDismissed] = useState(false);
 
@@ -152,7 +152,7 @@ export function InstallBanner() {
     if (wasDismissed) setDismissed(true);
   }, []);
 
-  if (isInstalled || dismissed) return null;
+  if (isInstalled || dismissed || hide) return null;
 
   const handleDismiss = () => {
     setDismissed(true);

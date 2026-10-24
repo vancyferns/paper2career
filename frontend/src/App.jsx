@@ -7,6 +7,7 @@ import Review from './pages/Review.jsx';
 import Runs from './pages/Runs.jsx';
 import { FlameIcon, HeartIcon, HomeIcon, DownloadIcon } from './components/Icons.jsx';
 import { InstallBanner, usePWAInstall, InstallGuideModal } from './components/InstallPrompt.jsx';
+import Footer from './components/Footer.jsx';
 
 function useHashRoute() {
   const [hash, setHash] = useState(window.location.hash || '#/');
@@ -39,7 +40,7 @@ export default function App() {
   return (
     <>
       <div className="bg-fx" aria-hidden="true">
-        <span className="orb orb-a" /><span className="orb orb-b" /><span className="orb orb-c" />
+        <span className="orb orb-a" /><span className="orb orb-b" /><span className="orb orb-c" /><span className="orb orb-d" />
         <span className="grid" />
       </div>
 
@@ -76,19 +77,9 @@ export default function App() {
 
       <main className={`wrap page ${page === 'job' ? 'has-action-bar' : ''}`}>{view}</main>
 
-      <footer className="wrap footer">
-        <p>
-          Listings are extracted automatically from newspaper classifieds and updated every morning.
-          Newspaper publication does not verify an employer or vacancy. Always confirm details directly with the advertiser,
-          and <strong>never pay to apply for a job.</strong>
-        </p>
-        <div className="footer-links">
-          <span>&copy; {new Date().getFullYear()} Paper2Career · Newspaper jobs for a brighter you</span>
-          <a href="#/review">Reviewer queue</a>
-        </div>
-      </footer>
+      <Footer hasActionBar={page === 'job'} />
 
-      <InstallBanner />
+      <InstallBanner hide={page === 'job'} />
     </>
   );
 }

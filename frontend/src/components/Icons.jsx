@@ -55,3 +55,4 @@ export function FlameIcon(p) {
 }
 
 export const DownloadIcon = (p) => <Stroke {...p}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" /></Stroke>;
+export const ArrowUpIcon = (p) => <Stroke {...p}><path d="M12 19V5M5 12l7-7 7 7" /></Stroke>;
