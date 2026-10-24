@@ -11,10 +11,7 @@ if (-not (Test-Path $VenvPython)) {
     Write-Error "Virtual environment not found at $VenvPython. Please run: py -3.12 -m venv .venv"
 }
 
-Write-Host "Starting Paper2Career daily ingestion (auto-publish mode)..." -ForegroundColor Cyan
-& $VenvPython -m paper2career --local run --auto-publish --trigger "scheduled_local"
-
-Write-Host "Exporting latest data to frontend..." -ForegroundColor Cyan
-& $VenvPython -m paper2career --local export-demo
+Write-Host "Starting Paper2Career daily ingestion..." -ForegroundColor Cyan
+& $VenvPython -m paper2career run --auto-publish --trigger "scheduled_local"
 
 Write-Host "Daily ingestion completed successfully!" -ForegroundColor Green

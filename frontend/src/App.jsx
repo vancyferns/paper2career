@@ -45,8 +45,11 @@ export default function App() {
       <header className="topbar">
         <div className="wrap topbar-inner">
           <a href="#/" className="brand">
-            <span className="brand-mark" aria-hidden="true">P2C</span>
-            <span>Paper<span className="grad-text">2</span>Career</span>
+            <img className="brand-mark" src={`${import.meta.env.BASE_URL}logo.png`} alt="" width="40" height="40" />
+            <span className="brand-text">
+              <span className="brand-name">Paper<span className="grad-text">2</span>Career</span>
+              <span className="brand-tag">Newspaper jobs for a brighter you</span>
+            </span>
           </a>
           <nav aria-label="Main" className="top-nav">
             {tabs.map(([href, label, , active, n]) => (
@@ -79,7 +82,7 @@ export default function App() {
           and <strong>never pay to apply for a job.</strong>
         </p>
         <div className="footer-links">
-          <span>&copy; {new Date().getFullYear()} Paper2Career</span>
+          <span>&copy; {new Date().getFullYear()} Paper2Career · Newspaper jobs for a brighter you</span>
           <a href="#/review">Reviewer queue</a>
         </div>
       </footer>

@@ -56,7 +56,7 @@ export default function Feed({ savedOnly = false }) {
     [jobs],
   );
 
-  const activeFilterCount = [location, deadline !== 'any', sort !== 'recent'].filter(Boolean).length;
+  const activeFilterCount = [location, deadline !== 'any', sort !== 'recent', category].filter(Boolean).length;
 
   const resetFilters = () => {
     setLocation('');
@@ -174,8 +174,11 @@ export default function Feed({ savedOnly = false }) {
               <BriefcaseIcon size={15} />
               <select value={category} onChange={(e) => setCategory(e.target.value)} aria-label="Category">
                 <option value="">All roles</option>
-                {CATEGORIES.filter((c) => categoryCounts[c.id] > 0 || category === c.id).map((c) => (
-                  <option key={c.id} value={c.id}>{c.label} ({categoryCounts[c.id]})</option>
+                {[...CATEGORIES]
+                  .filter((c) => categoryCounts[c.id] > 0 || category === c.id)
+                  .sort((a, b) => (categoryCounts[b.id] || 0) - (categoryCounts[a.id] || 0))
+                  .map((c) => (
+                    <option key={c.id} value={c.id}>{c.label} ({categoryCounts[c.id] || 0})</option>
                 ))}
               </select>
               <ChevronDownIcon size={15} />
@@ -229,7 +232,7 @@ export default function Feed({ savedOnly = false }) {
         <FilterSheet
           onClose={() => setShowFilters(false)}
           onReset={resetFilters}
-          {...{ location, setLocation, deadline, setDeadline, sort, setSort, locations }}
+          {...{ location, setLocation, deadline, setDeadline, sort, setSort, locations, category, setCategory, categoryCounts }}
         />
       )}
     </>
@@ -419,7 +422,7 @@ function Segmented({ value, onChange, options }) {
 }
 
 function FilterSheet({
-  onClose, onReset, location, setLocation, deadline, setDeadline, sort, setSort, locations,
+  onClose, onReset, location, setLocation, deadline, setDeadline, sort, setSort, locations, category, setCategory, categoryCounts,
 }) {
   useEffect(() => {
     const onKey = (e) => e.key === 'Escape' && onClose();
@@ -438,6 +441,19 @@ function FilterSheet({
         </div>
 
         <div className="sheet-body">
+          <label className="field-label">
+            <span>Job Role</span>
+            <select value={category} onChange={(e) => setCategory(e.target.value)}>
+              <option value="">All roles</option>
+              {[...CATEGORIES]
+                .filter((c) => (categoryCounts && categoryCounts[c.id] > 0) || category === c.id)
+                .sort((a, b) => ((categoryCounts && categoryCounts[b.id]) || 0) - ((categoryCounts && categoryCounts[a.id]) || 0))
+                .map((c) => (
+                  <option key={c.id} value={c.id}>{c.label} ({(categoryCounts && categoryCounts[c.id]) || 0})</option>
+              ))}
+            </select>
+          </label>
+
           <label className="field-label">
             <span>Location</span>
             <select value={location} onChange={(e) => setLocation(e.target.value)}>

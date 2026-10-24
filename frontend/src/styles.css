@@ -85,19 +85,12 @@ em { color: var(--ink); }
 }
 .topbar-inner { display: flex; align-items: center; gap: .75rem; height: var(--topbar); }
 .brand { display: flex; align-items: center; gap: .6rem; color: var(--ink); text-decoration: none; font-family: var(--display); font-weight: 700; font-size: 1.12rem; letter-spacing: -.02em; margin-right: auto; }
-.brand-mark {
-  position: relative; display: grid; place-items: center; width: 34px; height: 34px; border-radius: 10px;
-  background: var(--grad); color: #fff; font-size: .68rem; font-weight: 800; letter-spacing: .04em;
-  box-shadow: 0 6px 22px -6px rgba(253,54,110,.7);
-  overflow: hidden;
-}
-.brand-mark::after {
-  content: ""; position: absolute; inset: 0;
-  background: linear-gradient(115deg, transparent 30%, rgba(255,255,255,.55) 50%, transparent 70%);
-  transform: translateX(-120%); animation: sheen 5s var(--ease) infinite 1.5s;
-}
+.brand-mark { width: 40px; height: 40px; flex-shrink: 0; filter: drop-shadow(0 4px 14px rgba(253,54,110,.35)); transition: transform .4s var(--ease); }
+.brand:hover .brand-mark { transform: rotate(-6deg) scale(1.06); }
 @keyframes sheen { 0%, 70% { transform: translateX(-120%); } 100% { transform: translateX(120%); } }
 
+.brand-text { display: grid; line-height: 1.1; }
+.brand-tag { font-family: "Inter", sans-serif; font-size: .56rem; font-weight: 500; letter-spacing: .2em; text-transform: uppercase; color: var(--muted); margin-top: .2rem; }
 .top-nav { display: flex; gap: .25rem; }
 .top-nav a { position: relative; color: var(--muted); text-decoration: none; padding: .45rem .85rem; border-radius: 999px; font-size: .9rem; font-weight: 500; transition: color .2s, background .2s; }
 .top-nav a:hover { color: var(--ink); background: var(--neutral-bg); }
@@ -550,6 +543,7 @@ mark { background: rgba(253,54,110,.18); color: var(--ink); padding: .05em .3em;
 }
 
 @media (max-width: 380px) {
+  .brand-tag { font-size: .5rem; letter-spacing: .14em; }
   .stat-n { font-size: 1.35rem; }
   .hero h1 { font-size: 2rem; }
 }
