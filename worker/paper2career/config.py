@@ -24,7 +24,7 @@ class Settings:
     appwrite_endpoint: str = field(default_factory=lambda: os.environ.get("APPWRITE_ENDPOINT", "").rstrip("/"))
     appwrite_project_id: str = field(default_factory=lambda: os.environ.get("APPWRITE_PROJECT_ID", ""))
     appwrite_api_key: str = field(default_factory=lambda: os.environ.get("APPWRITE_API_KEY", ""))
-    database_id: str = field(default_factory=lambda: os.environ.get("APPWRITE_DATABASE_ID", "paper2career_db"))
+    database_id: str = field(default_factory=lambda: os.environ.get("APPWRITE_DATABASE_ID", "6adbb053000fa129e183"))
 
     source_base_url: str = "https://epaper.heraldgoa.in"
     source_alias: str = field(default_factory=lambda: os.environ.get("SOURCE_ALIAS", "oheraldo"))

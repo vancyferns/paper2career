@@ -57,7 +57,7 @@ jobs:
           APPWRITE_ENDPOINT: ${{ secrets.APPWRITE_ENDPOINT }}
           APPWRITE_PROJECT_ID: ${{ secrets.APPWRITE_PROJECT_ID }}
           APPWRITE_API_KEY: ${{ secrets.APPWRITE_API_KEY }}
-          APPWRITE_DATABASE_ID: ${{ secrets.APPWRITE_DATABASE_ID || '6adbb053000fa129e183' }}
+          APPWRITE_DATABASE_ID: "6adbb053000fa129e183"
           AUTO_PUBLISH: "true"
           OCR_ENGINE: tesseract
           INPUT_DATE: ${{ inputs.date }}
@@ -66,7 +66,9 @@ jobs:
         run: |
           ARGS=(--auto-publish)
           if [ -n "$INPUT_DATE" ]; then ARGS+=(--date "$INPUT_DATE"); fi
-          for p in ${INPUT_PAGES//,/ }; do ARGS+=(--page "$p"); done
+          if [ -n "$INPUT_PAGES" ]; then
+            for p in ${INPUT_PAGES//,/ }; do ARGS+=(--page "$p"); done
+          fi
           python -m paper2career run --trigger "$TRIGGER" "${ARGS[@]}"
 
       - name: Prune page cache older than 7 days
