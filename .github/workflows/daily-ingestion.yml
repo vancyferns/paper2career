@@ -10,8 +10,10 @@ on:
         description: "Comma-separated page numbers to process (skips classifieds detection)"
         required: false
   schedule:
-    # Runs at 10:00 AM IST (04:30 UTC) every morning
-    - cron: "30 4 * * *"
+    # Early morning run at 7:05 AM IST (01:35 UTC) when e-paper is published & zero GitHub queue
+    - cron: "35 1 * * *"
+    # Backup run at 9:45 AM IST (04:15 UTC) to catch any late editions
+    - cron: "15 4 * * *"
 
 permissions:
   contents: read

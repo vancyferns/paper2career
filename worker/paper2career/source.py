@@ -1,4 +1,4 @@
-﻿"""O Heraldo e-paper adapter: discover editions and acquire page images.
+"""O Heraldo e-paper adapter: discover editions and acquire page images.
 
 Verified against the live site (Oct 2026):
   * /epaper/oheraldo/DD-MM-YYYY           -> edition page (HTML)
@@ -69,29 +69,53 @@ class AcquiredPage:
 
 
 class HeraldoSource:
+    IMPERSONATIONS = ["chrome120", "chrome124", "safari17_0", "edge101"]
+
     def __init__(self, session=None):
         self.base = settings.source_base_url
         self.alias = settings.source_alias
+        self._imp_idx = 0
+        self._warmed = False
         if session is not None:
             self.session = session
-        elif _CURL_CFFI:
-            self.session = requests.Session(impersonate="chrome120")
+        else:
+            self._reset_session()
+        self._last_request = 0.0
+
+    def _reset_session(self):
+        if _CURL_CFFI:
+            target = self.IMPERSONATIONS[self._imp_idx % len(self.IMPERSONATIONS)]
+            self._imp_idx += 1
+            self.session = requests.Session(impersonate=target)
         else:
             self.session = requests.Session()
             self.session.headers.update({
                 "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
             })
-        self._last_request = 0.0
+        self._warmed = False
+
+    def _ensure_session(self):
+        if not self._warmed:
+            try:
+                self.session.get(self.base, timeout=20)
+                self._warmed = True
+            except Exception as e:
+                log.debug("Session warm-up at %s: %s", self.base, e)
 
     def _get(self, url: str, **kwargs) -> requests.Response:
+        self._ensure_session()
+        headers = kwargs.pop("headers", {})
+        headers.setdefault("Referer", f"{self.base}/")
+        headers.setdefault("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8")
+        headers.setdefault("Accept-Language", "en-US,en;q=0.9")
+
         for attempt in range(1, 4):
             wait = settings.request_delay_seconds - (time.monotonic() - self._last_request)
             if wait > 0:
                 time.sleep(wait)
             try:
-                resp = self.session.get(url, timeout=60, **kwargs)
+                resp = self.session.get(url, headers=headers, timeout=60, **kwargs)
             except (requests.ConnectionError, requests.Timeout) as exc:
-                # Dropped connections happen on large page images; back off and retry the same request.
                 if attempt == 3:
                     raise SourceUnavailable(f"GET {url} failed after 3 attempts: {exc}") from exc
                 log.warning("GET %s failed (%s); retrying", url, type(exc).__name__)
@@ -101,13 +125,21 @@ class HeraldoSource:
                 raise SourceUnavailable(f"GET {url} failed: {exc}") from exc
             finally:
                 self._last_request = time.monotonic()
+
+            if resp.status_code in (401, 403) and attempt < 3:
+                log.warning("GET %s returned %s on attempt %d; rotating session and retrying...", url, resp.status_code, attempt)
+                time.sleep(4 * attempt)
+                self._reset_session()
+                self._ensure_session()
+                continue
+
             if resp.status_code >= 500 and attempt < 3:
                 log.warning("GET %s returned %s; retrying", url, resp.status_code)
                 time.sleep(5 * attempt)
                 continue
             break
+
         if resp.status_code in (401, 403):
-            # Treat as "not permitted" and stop; never retry with a disguised client.
             raise SourceUnavailable(f"GET {url} returned {resp.status_code} (access refused)")
         if resp.status_code == 404:
             return resp
