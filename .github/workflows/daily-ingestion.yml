@@ -44,6 +44,15 @@ jobs:
       - name: Install Python packages
         run: pip install -r requirements.txt
 
+      - name: Set up Cloudflare WARP
+        uses: fscarmen/warp-on-actions@v1.4
+        with:
+          stack: dual
+          mode: wireguard
+
+      - name: Verify WARP egress connection
+        run: curl -s https://www.cloudflare.com/cdn-cgi/trace
+
       - name: Restore downloaded pages and OCR cache
         uses: actions/cache@v4
         with:

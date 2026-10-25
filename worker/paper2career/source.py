@@ -69,7 +69,7 @@ class AcquiredPage:
 
 
 class HeraldoSource:
-    IMPERSONATIONS = ["chrome120", "chrome124", "safari17_0", "edge101"]
+    IMPERSONATIONS = ["chrome124", "chrome120", "chrome110"]
 
     def __init__(self, session=None):
         self.base = settings.source_base_url
@@ -106,8 +106,6 @@ class HeraldoSource:
         self._ensure_session()
         headers = kwargs.pop("headers", {})
         headers.setdefault("Referer", f"{self.base}/")
-        headers.setdefault("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8")
-        headers.setdefault("Accept-Language", "en-US,en;q=0.9")
 
         for attempt in range(1, 4):
             wait = settings.request_delay_seconds - (time.monotonic() - self._last_request)
@@ -127,7 +125,8 @@ class HeraldoSource:
                 self._last_request = time.monotonic()
 
             if resp.status_code in (401, 403) and attempt < 3:
-                log.warning("GET %s returned %s on attempt %d; rotating session and retrying...", url, resp.status_code, attempt)
+                snippet = (resp.text or "")[:150].replace("\n", " ").strip()
+                log.warning("GET %s returned %s on attempt %d (%s); rotating session and retrying...", url, resp.status_code, attempt, snippet)
                 time.sleep(4 * attempt)
                 self._reset_session()
                 self._ensure_session()
@@ -140,7 +139,8 @@ class HeraldoSource:
             break
 
         if resp.status_code in (401, 403):
-            raise SourceUnavailable(f"GET {url} returned {resp.status_code} (access refused)")
+            snippet = (resp.text or "")[:150].replace("\n", " ").strip()
+            raise SourceUnavailable(f"GET {url} returned {resp.status_code} ({snippet or 'access refused'})")
         if resp.status_code == 404:
             return resp
         if resp.status_code >= 400:
