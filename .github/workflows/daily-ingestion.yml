@@ -10,9 +10,14 @@ on:
         description: "Comma-separated page numbers to process (skips classifieds detection)"
         required: false
   schedule:
-    # Early morning run at 7:05 AM IST (01:35 UTC) when e-paper is published & zero GitHub queue
+    # Staggered early morning runs (IST = UTC + 5:30)
+    # 7:05 AM IST (01:35 UTC) - Primary run when e-paper is published
     - cron: "35 1 * * *"
-    # Backup run at 9:45 AM IST (04:15 UTC) to catch any late editions
+    # 7:40 AM IST (02:10 UTC) - Backup retry in case GitHub shared queue delays first run
+    - cron: "10 2 * * *"
+    # 8:20 AM IST (02:50 UTC) - Morning catchup
+    - cron: "50 2 * * *"
+    # 9:45 AM IST (04:15 UTC) - Late morning backup to catch any late newspaper editions
     - cron: "15 4 * * *"
 
 permissions:
