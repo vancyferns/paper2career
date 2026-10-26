@@ -76,7 +76,7 @@ def looks_like_classifieds(path: Path) -> bool:
     text = " ".join(l.text for l in ocr.ocr_image(img))
     hits = len(CLASSIFIED_MARKERS.findall(text))
     log.info("  %s: %d classifieds markers", path.name, hits)
-    return hits >= 3
+    return hits >= 2
 
 
 # ---------------------------------------------------------------- ingestion

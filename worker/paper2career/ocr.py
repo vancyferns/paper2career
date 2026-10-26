@@ -91,22 +91,41 @@ def _ocr_tesseract(image: Image.Image) -> list[OcrLine]:
     if os.environ.get("TESSERACT_CMD"):
         pytesseract.pytesseract.tesseract_cmd = os.environ["TESSERACT_CMD"]
     gray = image.convert("L")
-    # psm 3 = automatic page segmentation, which handles multi-column classifieds reasonably.
+    # psm 3 = automatic page segmentation
     data = pytesseract.image_to_data(gray, config="--psm 3", output_type=pytesseract.Output.DICT)
     grouped: dict[tuple, list[int]] = {}
     for i, word in enumerate(data["text"]):
         if word.strip() and float(data["conf"][i]) >= 0:
             key = (data["block_num"][i], data["par_num"][i], data["line_num"][i])
             grouped.setdefault(key, []).append(i)
+
     lines = []
     for idxs in grouped.values():
-        text = " ".join(data["text"][i] for i in idxs)
-        x0 = min(data["left"][i] for i in idxs)
-        y0 = min(data["top"][i] for i in idxs)
-        x1 = max(data["left"][i] + data["width"][i] for i in idxs)
-        y1 = max(data["top"][i] + data["height"][i] for i in idxs)
-        conf = sum(float(data["conf"][i]) for i in idxs) / len(idxs) / 100
-        lines.append(OcrLine(text, x0, y0, x1, y1, round(conf, 3)))
+        # Sort words by horizontal left position
+        sorted_idxs = sorted(idxs, key=lambda idx: data["left"][idx])
+
+        # Split words into separate sub-lines if there is a column gutter gap (> 35px or > 1.8x height)
+        sub_lines: list[list[int]] = [[]]
+        for idx in sorted_idxs:
+            if sub_lines[-1]:
+                prev_idx = sub_lines[-1][-1]
+                prev_right = data["left"][prev_idx] + data["width"][prev_idx]
+                gap = data["left"][idx] - prev_right
+                h = max(data["height"][idx], data["height"][prev_idx])
+                if gap > max(35, int(h * 1.8)):
+                    sub_lines.append([])
+            sub_lines[-1].append(idx)
+
+        for s_idxs in sub_lines:
+            if not s_idxs:
+                continue
+            text = " ".join(data["text"][i] for i in s_idxs)
+            x0 = min(data["left"][i] for i in s_idxs)
+            y0 = min(data["top"][i] for i in s_idxs)
+            x1 = max(data["left"][i] + data["width"][i] for i in s_idxs)
+            y1 = max(data["top"][i] + data["height"][i] for i in s_idxs)
+            conf = sum(float(data["conf"][i]) for i in s_idxs) / len(s_idxs) / 100
+            lines.append(OcrLine(text, x0, y0, x1, y1, round(conf, 3)))
     return lines
 
 

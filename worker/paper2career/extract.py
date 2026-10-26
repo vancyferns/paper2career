@@ -142,7 +142,13 @@ AD_REF_RE = re.compile(r"\b(?:CL|CLS|AD|REF|NO)[\s.:/-]*(\d{4,})\b", re.I)
 # News stories open with an uppercase place dateline: "MARGAO:", "PANJIM:", "VASCO DA GAMA:".
 NEWS_DATELINE_RE = re.compile(r"^[A-Z]{3,}(?:\s[A-Z]{2,}){0,2}:\s")
 # Some carry a suffix for a split booking: "2026030842-1".
-AD_TERMINATOR_RE = re.compile(r"^\W*(20\d{8})(?:\s*-\s*\d{1,2})?\W*$")
+# Some carry a suffix for a split booking: "2026030842-1". Match anywhere in line as a boundary marker.
+AD_TERMINATOR_RE = re.compile(r"(?:^|\D)(20\d{8})(?:\s*-\s*\d{1,2})?(?:\D|$)", re.I)
+AD_OPENER_RE = re.compile(
+    r"^\s*(wanted|required|urgently\s+required|vacancy|hiring|walk[- ]?in|we\s+are\s+hiring|staff\s+required|"
+    r"immediate\s+joining|openings?|looking\s+for|cook\s*&|cook\s+required|driver\s+required|accountant\s+required)\b",
+    re.I,
+)
 
 
 PAGE_FURNITURE_RE = re.compile(
@@ -181,10 +187,16 @@ def split_columns(lines: list[OcrLine]) -> list[list[OcrLine]]:
     """
     if not lines:
         return []
+    # Exclude wide multi-column banners when computing column gutters
+    median_w = statistics.median(l.x1 - l.x0 for l in lines)
+    col_lines = [l for l in lines if (l.x1 - l.x0) <= median_w * 1.6]
+    if not col_lines:
+        col_lines = lines
+
     width = int(max(l.x1 for l in lines)) + 1
     bin_w = max(2, width // 1000)
     coverage = [0] * (width // bin_w + 1)
-    for l in lines:
+    for l in col_lines:
         for b in range(int(l.x0) // bin_w, int(l.x1) // bin_w + 1):
             coverage[b] += 1
     # Headlines spanning two columns still cross a gutter, so a gutter is "much emptier", not empty.
@@ -220,7 +232,13 @@ def _merge_fragments(column: list[OcrLine]) -> list[OcrLine]:
     out: list[OcrLine] = []
     for l in sorted(column, key=lambda l: (l.y0, l.x0)):
         prev = out[-1] if out else None
-        if prev and abs((l.y0 + l.y1) / 2 - (prev.y0 + prev.y1) / 2) < min(l.height, prev.height) * 0.5:
+        # Must be on same baseline AND close horizontally (not across a gutter)
+        if (
+            prev
+            and abs((l.y0 + l.y1) / 2 - (prev.y0 + prev.y1) / 2) < min(l.height, prev.height) * 0.5
+            and (l.x0 - prev.x1) <= max(35.0, min(l.height, prev.height) * 2.0)
+            and (l.x0 - prev.x1) >= -10.0
+        ):
             first, second = (prev, l) if prev.x0 <= l.x0 else (l, prev)
             out[-1] = OcrLine(f"{first.text} {second.text}", min(l.x0, prev.x0), min(l.y0, prev.y0),
                               max(l.x1, prev.x1), max(l.y1, prev.y1), min(l.conf, prev.conf))
@@ -271,26 +289,35 @@ def segment_ads(lines: list[OcrLine]) -> list[Advertisement]:
                 section = heading
                 prev = None
                 continue
-            term = AD_TERMINATOR_RE.match(ln.text)
-            if ref_mode and term:
-                flush(term.group(1))
+
+            pure_term = bool(re.match(r"^\W*20\d{8}(?:\s*-\s*\d{1,2})?\W*$", ln.text))
+            term = AD_TERMINATOR_RE.search(ln.text)
+
+            if pure_term and ref_mode:
+                flush(term.group(1) if term else None)
                 prev = ln
                 continue
+
             gap = ln.y0 - prev.y1 if prev else 0
-            if ref_mode:
-                # Only a large gap (a rule, a box, an editorial item) breaks an ad that has no number yet.
-                starts_new = prev is not None and gap > body_height * 1.8
-            else:
-                starts_new = prev is not None and (
-                    gap > body_height * 0.9
-                    or re.match(r"^\s*(wanted|required|urgently|vacancy|hiring|walk[- ]?in)\b", ln.text, re.I)
-                )
-            if starts_new:
+
+            # Ad opener: A line clearly starting a new recruitment ad starts a new ad if we already have content
+            opener = AD_OPENER_RE.match(ln.text)
+            if opener and len(current) >= 2:
                 flush()
+
+            gap_break = prev is not None and (gap > body_height * 1.8 if ref_mode else gap > body_height * 0.9)
+            if gap_break:
+                flush()
+
             if not current:
                 current_section = section
             current.append(ln)
             prev = ln
+
+            # If this line ended with an inline ad reference number, flush the completed ad
+            if term and len(current) >= 1:
+                flush(term.group(1))
+                prev = None
     flush()
     return [a for a in ads if len(a.text) >= 25]
 
@@ -309,12 +336,21 @@ def _make_ad(lines: list[OcrLine], section: str | None, ref: str | None = None, 
         parts.setdefault(col, []).append(l)
         last_x = l.x0
     main = max(parts.values(), key=len)
+    # Clamp ad bounding box width to prevent spilling across column boundaries
+    med_w = statistics.median(l.x1 - l.x0 for l in main)
+    min_x = min(l.x0 for l in main)
+    max_x = max(l.x1 for l in main)
+    if (max_x - min_x) > med_w * 1.5:
+        med_cx = statistics.median(l.cx for l in main)
+        min_x = max(min_x, med_cx - med_w * 0.75)
+        max_x = min(max_x, med_cx + med_w * 0.75)
+
     return Advertisement(
         text=text,
         lines=list(lines),
         section=section,
         column=max(parts, key=lambda k: len(parts[k])),
-        bbox=(min(l.x0 for l in main), min(l.y0 for l in main), max(l.x1 for l in main), max(l.y1 for l in main)),
+        bbox=(min_x, min(l.y0 for l in main), max_x, max(l.y1 for l in main)),
         ocr_confidence=round(statistics.fmean(l.conf for l in lines), 3),
         ad_reference=ref,
         terminated=ref is not None or not ref_mode,
