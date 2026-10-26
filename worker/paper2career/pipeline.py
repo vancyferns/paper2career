@@ -245,12 +245,56 @@ class Ingestor:
         stats.pages_failed += failed
         stats.editions_processed += 1
         found = stats.jobs_extracted - jobs_before
+        if found and self.auto_publish:
+            self.resync_edition_jobs(edition.publication_date)
         status = "PARTIAL" if failed else ("PROCESSED" if found else "NO_RECRUITMENT_FOUND")
         self.repo.update("editions", edition_id, {
             "status": status, "processed_at": now_iso(), "jobs_found": found,
             "classified_pages": [p.page.page_number for p in classified],
             "checksum": sha("".join(sorted(a.checksum for a in acquired))),
         })
+
+    def resync_edition_jobs(self, pub_date: date) -> int:
+        """Scan all appearances for pub_date and ensure canonical job metadata strictly matches the clipping."""
+        iso_date = pub_date.isoformat()
+        appearances = self.repo.find("job_appearances", "publication_date", iso_date, limit=2000)
+        fixed = 0
+        for app in appearances:
+            job_id = app.get("job_id")
+            if not job_id:
+                continue
+            job = self.repo.get("jobs", job_id)
+            if not job:
+                continue
+            text = app.get("extracted_text") or ""
+            if not text:
+                continue
+            fake_line = OcrLine(text, 0, 0, 100, 20)
+            ad = Advertisement(
+                text=text, lines=[fake_line], section=app.get("section"),
+                column=0, bbox=tuple(app.get("bbox") or [0, 0, 100, 100]),
+                ocr_confidence=app.get("confidence") or 0.8,
+                ad_reference=app.get("ad_reference"),
+            )
+            drafts = extract.extract_jobs(ad, pub_date)
+            if not drafts:
+                continue
+            role_idx = app.get("role_index", 0)
+            draft = next((d for d in drafts if d.role_index == role_idx), drafts[0])
+
+            updates = {}
+            for f in ("description", "contact_phones", "contact_emails", "employer",
+                      "location", "qualification", "experience", "salary_text",
+                      "application_instructions", "deadline"):
+                if job.get(f) != getattr(draft, f):
+                    updates[f] = getattr(draft, f)
+            if updates:
+                updates["search_text"] = _search_text(draft)[:5000]
+                self.repo.update("jobs", job_id, updates)
+                fixed += 1
+        if fixed:
+            log.info("Auto-resync for %s: verified and fixed %d jobs to match clippings", iso_date, fixed)
+        return fixed
 
     def import_file(self, path: Path, publication_date: date, page_number: int, source_url: str | None = None,
                     image_url: str | None = None) -> dict:
@@ -348,12 +392,27 @@ class Ingestor:
                 "appearance_count": int(job.get("appearance_count") or 1) + 1,
                 "latest_appearance_id": appearance_id,
             }
-            update.update(filled_fields(job, draft))     # a newly readable value fills a gap, no review
-            if match.needs_review:
-                if should_publish:
-                    update.update({k: v[1] for k, v in match.changes.items()})
-                else:
+            if should_publish:
+                # In auto-publish mode, keep canonical job metadata strictly in sync with latest appearance
+                update.update({
+                    "title": draft.title[:255],
+                    "employer": draft.employer,
+                    "description": draft.description[:10000],
+                    "location": draft.location,
+                    "qualification": draft.qualification,
+                    "experience": draft.experience,
+                    "salary_text": draft.salary_text,
+                    "contact_phones": draft.contact_phones,
+                    "contact_emails": draft.contact_emails,
+                    "application_instructions": draft.application_instructions,
+                    "deadline": draft.deadline,
+                    "search_text": _search_text(draft)[:5000],
+                })
+            else:
+                update.update(filled_fields(job, draft))
+                if match.needs_review:
                     update["has_pending_revision"] = True
+
             self.repo.update("jobs", job_id, update)
             stats.repeat_appearances += 1
             match_kind = match.kind

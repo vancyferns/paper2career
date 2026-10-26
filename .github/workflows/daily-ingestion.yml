@@ -87,6 +87,11 @@ jobs:
           fi
           python -m paper2career run --trigger "$TRIGGER" "${ARGS[@]}"
 
+      - name: Auto-verify & resync daily job details against clippings
+        run: |
+          TARGET="${INPUT_DATE:-$(date +%Y-%m-%d)}"
+          PYTHONPATH=. python scripts/resync_day.py "$TARGET" || true
+
       - name: Prune page cache older than 7 days
         if: always()
         run: find downloads -mindepth 1 -maxdepth 1 -type d -mtime +7 -exec rm -rf {} + || true
