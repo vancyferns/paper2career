@@ -1,4 +1,4 @@
-﻿"""Acceptance tests from SRS section 8, run against synthetic OCR output and a fake e-paper source."""
+"""Acceptance tests from SRS section 8, run against synthetic OCR output and a fake e-paper source."""
 from datetime import date
 from pathlib import Path
 
@@ -331,3 +331,26 @@ def test_salary_before_keyword_and_phone_not_captured():
     assert len(drafts) == 1
     assert drafts[0].salary_text == "minimum 15000/- salary"
     assert "7972921776" not in drafts[0].salary_text
+
+
+def test_horizontal_strip_artifacts_rejected():
+    # A thin wide horizontal strip across columns should be rejected by segment_ads
+    lines = [
+        OcrLine("Wanted Cook and Waiter for restaurant at Panjim. Call 9822112233.", 0, 100, 700, 135, 0.95),
+        OcrLine("2026028524", 600, 136, 700, 150, 0.95),
+    ]
+    ads = extract.segment_ads(lines)
+    # The bounding box width is 700, height is 50 (< 70) -> must be rejected
+    assert len(ads) == 0
+
+
+def test_wide_bounding_box_clamped_to_column():
+    lines = [
+        OcrLine("Wanted Cook for restaurant at Panjim. Call 9822112233.", 100, 100, 450, 130, 0.95),
+        OcrLine("Experience 2 years required.", 100, 135, 450, 165, 0.95),
+        OcrLine("2026028524", 300, 170, 450, 195, 0.95),
+    ]
+    ad = extract._make_ad(lines, "SITUATIONS VACANT")
+    w = ad.bbox[2] - ad.bbox[0]
+    assert w <= 600
+

@@ -85,14 +85,71 @@ def pdf_lines(path: Path, page_index: int = 0, min_native_chars: int = 200) -> l
 
 # ---------------------------------------------------------------- tesseract
 
+def detect_columns(image: Image.Image) -> list[tuple[int, int]]:
+    """Detect vertical text columns on a newspaper page using projection profile.
+    Returns list of (x0, x1) column boundaries."""
+    import numpy as np
+
+    gray = image.convert("L")
+    w, h = gray.size
+    y0, y1 = int(h * 0.08), int(h * 0.96)
+    sub = gray.crop((0, y0, w, y1))
+    arr = np.asarray(sub)
+    ink = (arr < 170).astype(np.float32)
+    proj = ink.sum(axis=0)
+    win = max(5, int(w * 0.005))
+    smoothed = np.convolve(proj, np.ones(win) / win, mode="same")
+    med = float(np.median(smoothed))
+    thresh = med * 0.35
+    is_text = smoothed > thresh
+
+    columns = []
+    in_col = False
+    start = 0
+    for x in range(len(is_text)):
+        if is_text[x] and not in_col:
+            in_col = True
+            start = x
+        elif not is_text[x] and in_col:
+            in_col = False
+            if (x - start) > w * 0.05:
+                columns.append((max(0, start - 5), min(w, x + 5)))
+    if in_col and (len(is_text) - start) > w * 0.05:
+        columns.append((max(0, start - 5), min(w, len(is_text))))
+
+    return columns
+
+
 def _ocr_tesseract(image: Image.Image) -> list[OcrLine]:
+    # Pre-segment into columns if multiple columns exist on broadsheet/newspaper page
+    columns = detect_columns(image)
+    if len(columns) >= 2:
+        log.info("Detected %d newspaper columns; processing column-by-column with Tesseract", len(columns))
+        all_lines = []
+        for x0, x1 in columns:
+            strip = image.crop((x0, 0, x1, image.height))
+            strip_lines = _ocr_tesseract_strip(strip, config="--psm 4")
+            for ln in strip_lines:
+                all_lines.append(OcrLine(
+                    ln.text,
+                    ln.x0 + x0,
+                    ln.y0,
+                    ln.x1 + x0,
+                    ln.y1,
+                    ln.conf,
+                ))
+        return all_lines
+
+    return _ocr_tesseract_strip(image, config="--psm 3")
+
+
+def _ocr_tesseract_strip(image: Image.Image, config: str = "--psm 4") -> list[OcrLine]:
     import pytesseract
 
     if os.environ.get("TESSERACT_CMD"):
         pytesseract.pytesseract.tesseract_cmd = os.environ["TESSERACT_CMD"]
     gray = image.convert("L")
-    # psm 3 = automatic page segmentation
-    data = pytesseract.image_to_data(gray, config="--psm 3", output_type=pytesseract.Output.DICT)
+    data = pytesseract.image_to_data(gray, config=config, output_type=pytesseract.Output.DICT)
     grouped: dict[tuple, list[int]] = {}
     for i, word in enumerate(data["text"]):
         if word.strip() and float(data["conf"][i]) >= 0:

@@ -319,7 +319,17 @@ def segment_ads(lines: list[OcrLine]) -> list[Advertisement]:
                 flush(term.group(1))
                 prev = None
     flush()
-    return [a for a in ads if len(a.text) >= 25]
+    valid_ads = []
+    for a in ads:
+        if len(a.text) < 25:
+            continue
+        w = a.bbox[2] - a.bbox[0]
+        h = a.bbox[3] - a.bbox[1]
+        # Reject thin horizontal strip artifacts across columns (e.g. w>550 and h<70)
+        if w >= 480 and h < 75:
+            continue
+        valid_ads.append(a)
+    return valid_ads
 
 
 def _make_ad(lines: list[OcrLine], section: str | None, ref: str | None = None, ref_mode: bool = False) -> Advertisement:
@@ -344,6 +354,10 @@ def _make_ad(lines: list[OcrLine], section: str | None, ref: str | None = None, 
         med_cx = statistics.median(l.cx for l in main)
         min_x = max(min_x, med_cx - med_w * 0.75)
         max_x = min(max_x, med_cx + med_w * 0.75)
+    if (max_x - min_x) > 600:
+        med_cx = statistics.median(l.cx for l in main)
+        min_x = max(min_x, med_cx - 275)
+        max_x = min(max_x, med_cx + 275)
 
     return Advertisement(
         text=text,
