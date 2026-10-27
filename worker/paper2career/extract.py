@@ -57,20 +57,26 @@ NON_JOB_KEYWORDS = re.compile(
 ROLE_WORDS = (
     "accountant", "accounts assistant", "accounts executive", "account assistant", "receptionist",
     "front office", "driver", "heavy vehicle driver", "cook", "chef", "commis", "helper", "kitchen helper",
-    "steward", "waiter", "housekeeping", "housekeeper", "room attendant", "security guard", "security",
+    "steward", "waiter", "waitress", "housekeeping", "housekeeper", "room attendant", "security guard", "security",
     "watchman", "nurse", "staff nurse", "ward boy", "ayah", "pharmacist", "lab technician", "teacher",
     "lecturer", "professor", "principal", "electrician", "plumber", "welder", "fitter", "mechanic",
     "technician", "engineer", "site engineer", "civil engineer", "supervisor", "site supervisor",
-    "manager", "sales executive", "sales manager", "salesman", "salesgirl", "marketing executive",
-    "office assistant", "office boy", "peon", "clerk", "data entry operator", "computer operator",
-    "telecaller", "tele caller", "cashier", "storekeeper", "store keeper", "delivery boy", "carpenter",
-    "mason", "painter", "tailor", "beautician", "hair stylist", "maid", "caretaker", "nanny",
-    "gardener", "mali", "admin executive", "hr executive", "executive", "assistant", "operator",
-    "trainee", "intern", "draughtsman", "architect", "pharmacy assistant", "doctor", "physiotherapist",
-    "bartender", "barista", "captain", "bell boy", "lifeguard", "packer", "loader", "warehouse",
-    "assistant cook", "all rounder", "dishwasher", "cleaner", "sales staff", "salesboy", "sales boy",
-    "store incharge", "factory worker", "worker", "labourer", "housekeeping executive", "linen supervisor",
-    "commis chef", "counter boy", "tandoor cook", "office executive", "accounts staff",
+    "manager", "restaurant manager", "hotel manager", "bar manager", "general manager", "operations manager",
+    "kitchen supervisor", "restaurant supervisor", "housekeeping supervisor", "linen supervisor", "shift supervisor",
+    "sales executive", "sales manager", "salesman", "salesgirl", "sales person", "sales staff", "salesboy", "sales boy",
+    "marketing executive", "field executive", "office assistant", "office boy", "peon", "clerk",
+    "data entry operator", "computer operator", "telecaller", "tele caller", "cashier", "storekeeper",
+    "store keeper", "delivery boy", "carpenter", "mason", "painter", "tailor", "beautician", "hair stylist",
+    "maid", "caretaker", "nanny", "gardener", "mali", "admin executive", "hr executive", "executive",
+    "assistant", "operator", "trainee", "intern", "draughtsman", "architect", "pharmacy assistant",
+    "doctor", "physiotherapist", "bartender", "barman", "barista", "captain", "bell boy", "lifeguard",
+    "packer", "loader", "warehouse", "dishwasher", "cleaner", "store incharge", "factory worker",
+    "worker", "labourer", "housekeeping executive", "linen supervisor", "counter boy", "office executive",
+    "accounts staff", "service staff", "service boy", "room boy", "housekeeping staff", "cleaning staff",
+    "indian chef", "continental chef", "tandoori chef", "tandoor chef", "chinese chef", "goan chef",
+    "head chef", "sous chef", "executive chef", "pastry chef", "bakery chef", "pizza chef", "commis chef",
+    "indian cook", "continental cook", "tandoori cook", "tandoor cook", "chinese cook", "south indian cook",
+    "all rounder cook", "all rounder", "assistant cook", "curry cook", "shawarma cook", "snack cook", "fast food cook",
     "special educator", "educator", "special education teacher", "laboratory assistant", "lab assistant",
     "undergraduate teacher", "primary teacher", "high school teacher", "pre-primary teacher",
     "assistant teacher", "librarian", "library assistant", "counselor", "counsellor", "instructor", "tutor",
@@ -85,14 +91,26 @@ _ROLE_RE = re.compile(
 )
 
 GOA_PLACES = (
+    "Colva Beach", "Baga Beach", "Calangute Beach", "Candolim Beach", "Miramar Beach", "Benaulim Beach",
+    "Mandrem Beach", "Morjim Beach", "Palolem Beach", "Anjuna Beach", "Arambol Beach", "Vagator Beach", "Ashwem Beach",
+    "Verna Industrial Estate", "Kundaim Industrial Estate", "Pilerne Industrial Estate", "Tuem Industrial Estate",
+    "Tivim Industrial Estate", "Corlim Industrial Estate", "Madkaim Industrial Estate", "Bethora Industrial Estate",
+    "Alto Porvorim", "Alto St. Cruz", "Alto Santa Cruz", "Alto Betim", "Dona Paula", "Caranzalem", "Miramar",
+    "Santa Cruz", "St. Cruz", "St Cruz", "St. Inez", "St Inez", "Campal", "Ribandar", "Taleigao", "Merces",
     "Panaji", "Panjim", "Margao", "Madgaon", "Vasco", "Vasco da Gama", "Mapusa", "Ponda", "Porvorim",
     "Verna", "Calangute", "Candolim", "Baga", "Anjuna", "Colva", "Benaulim", "Old Goa", "Bicholim",
     "Sanquelim", "Valpoi", "Pernem", "Quepem", "Curchorem", "Canacona", "Sanguem", "Cuncolim",
-    "Dona Paula", "Caranzalem", "Miramar", "Taleigao", "Merces", "Saligao", "Siolim", "Arpora",
-    "Nagoa", "Kundaim", "Corlim", "Tivim", "Thivim", "Pilerne", "Bambolim", "Dabolim", "Cortalim",
-    "Navelim", "Fatorda", "Nuvem", "Majorda", "Varca", "Cavelossim", "Mormugao", "Sancoale",
-    "Usgao", "Tisk", "Karaswada", "Bardez", "Salcete", "Tiswadi", "North Goa", "South Goa", "Goa",
-    "Belgaum", "Karwar", "Siridao", "Utorda", "Majorda", "Seraulim", "Colvale", "Assagao", "Raia",
+    "Saligao", "Siolim", "Arpora", "Nagoa", "Kundaim", "Corlim", "Tivim", "Thivim", "Pilerne",
+    "Bambolim", "Dabolim", "Cortalim", "Navelim", "Fatorda", "Nuvem", "Majorda", "Varca", "Cavelossim",
+    "Mormugao", "Sancoale", "Usgao", "Tisk", "Karaswada", "Bardez", "Salcete", "Tiswadi", "North Goa", "South Goa",
+    "Belgaum", "Karwar", "Siridao", "Utorda", "Seraulim", "Colvale", "Assagao", "Raia", "Loutolim",
+    "Aquem", "Comba", "Borda", "Gogol", "Davorlim", "Curtorim", "Macasana", "Betalbatim", "Arossim",
+    "Cansaulim", "Velsao", "Chinchinim", "Assolna", "Velim", "Betul", "Carmona", "Morjim", "Arambol",
+    "Mandrem", "Ashwem", "Vagator", "Chapora", "Oxel", "Camurlim", "Socorro", "Salvador do Mundo",
+    "Penha de Franca", "Sangolda", "Guirim", "Parra", "Canca", "Nerul", "Sinquerim", "Reis Magos",
+    "Betim", "Britona", "Chorao", "Divar", "Cumbarjua", "Banastarim", "Marcel", "Priol", "Mardol",
+    "Farmagudi", "Bandora", "Durbhat", "Borim", "Shiroda", "Panchwadi", "Sanvordem", "Chaudi", "Agonda",
+    "Chicalim", "Bogmalo", "Mayem", "Honda", "Pissurlem", "Khandepar", "Goa",
 )
 _PLACE_RE = re.compile(r"\b(" + "|".join(sorted(map(re.escape, GOA_PLACES), key=len, reverse=True)) + r")\b", re.I)
 
@@ -113,10 +131,10 @@ EXPERIENCE_RE = re.compile(
 SALARY_RE = re.compile(
     r"("
     r"\b(?:salary|stipend|pay|ctc)(?:\s+(?:is|starting|minimum|fixed))?\s*[:\-]?"
-    r"\s*(?:\brs\.?|inr|₹)?\s*(?![6-9]\d{9}\b)[\d,]{3,6}(?:\s*(?:-|to)\s*(?:\brs\.?|inr|₹)?\s*[\d,]{3,6})?(?:\s*/-)?(?:\s*(?:p\.?m\.?|per month|lpa|k))?|"
-    r"\b(?:(?:minimum|starting|fixed|basic|attractive)\s+)?(?:\brs\.?|inr|₹)?\s*(?![6-9]\d{9}\b)[\d,]{3,6}(?:\s*/-)?(?:\s*(?:p\.?m\.?|per month))?\s*(?:as\s+)?salary\b|"
-    r"\b(?:rs\.?|inr|₹)\s*(?![6-9]\d{9}\b)[\d,]{3,6}(?:\s*(?:-|to)\s*(?:\brs\.?|inr|₹)?\s*[\d,]{3,6})?(?:\s*/-)?(?:\s*(?:p\.?m\.?|per month|lpa|k))?|"
-    r"\b(?:minimum|starting|fixed)\s+(?:\brs\.?|inr|₹)?\s*(?![6-9]\d{9}\b)[\d,]{3,6}\s*(?:/-|p\.?m\.?|per month)\b|"
+    r"\s*(?:\brs\.?|inr|₹)?\s*(?![6-9]\d{9}\b)[\d,Oo]{2,7}(?:\s*(?:-|to)\s*(?:\brs\.?|inr|₹)?\s*[\d,Oo]{2,7})?(?:\s*/-|\s*/)?(?:\s*(?:p\.?m\.?|per month|lpa|k\b))?|"
+    r"\b(?:(?:minimum|starting|fixed|basic|attractive)\s+)?(?:\brs\.?|inr|₹)?\s*(?![6-9]\d{9}\b)[\d,Oo]{2,7}(?:\s*(?:-|to)\s*(?:\brs\.?|inr|₹)?\s*[\d,Oo]{2,7})?(?:\s*/-|\s*/)?(?:\s*(?:p\.?m\.?|per month|lpa|k\b))?\s*(?:as\s+)?salary\b|"
+    r"\b(?:rs\.?|inr|₹)\s*(?![6-9]\d{9}\b)[\d,Oo]{2,7}(?:\s*(?:-|to)\s*(?:\brs\.?|inr|₹)?\s*[\d,Oo]{2,7})?(?:\s*/-|\s*/)?(?:\s*(?:p\.?m\.?|per month|lpa|k\b))?|"
+    r"\b(?:minimum|starting|fixed)\s+(?:\brs\.?|inr|₹)?\s*(?![6-9]\d{9}\b)[\d,Oo]{2,7}\s*(?:/-|/|p\.?m\.?|per month)\b|"
     r"\b(?:attractive|negotiable|best in (?:the )?industry|lucrative|handsome)\s+salary\b|"
     r"\bsalary\s+(?:negotiable|no bar|best in (?:the )?industry|as per (?:experience|norms))\b"
     r")",
@@ -268,10 +286,10 @@ def segment_ads(lines: list[OcrLine]) -> list[Advertisement]:
     current: list[OcrLine] = []
     current_section: str | None = None
 
-    def flush(ref: str | None = None):
+    def flush(ref: str | None = None, term_line: OcrLine | None = None):
         nonlocal current
         if current:
-            ads.append(_make_ad(current, current_section, ref, ref_mode))
+            ads.append(_make_ad(current, current_section, ref, ref_mode, term_line))
             current = []
 
     for column in split_columns(lines):
@@ -294,7 +312,7 @@ def segment_ads(lines: list[OcrLine]) -> list[Advertisement]:
             term = AD_TERMINATOR_RE.search(ln.text)
 
             if pure_term and ref_mode:
-                flush(term.group(1) if term else None)
+                flush(term.group(1) if term else None, term_line=ln)
                 prev = ln
                 continue
 
@@ -332,7 +350,7 @@ def segment_ads(lines: list[OcrLine]) -> list[Advertisement]:
     return valid_ads
 
 
-def _make_ad(lines: list[OcrLine], section: str | None, ref: str | None = None, ref_mode: bool = False) -> Advertisement:
+def _make_ad(lines: list[OcrLine], section: str | None, ref: str | None = None, ref_mode: bool = False, term_line: OcrLine | None = None) -> Advertisement:
     text = _join_lines(lines)
     if ref is None:
         m = AD_REF_RE.search(text)
@@ -364,7 +382,7 @@ def _make_ad(lines: list[OcrLine], section: str | None, ref: str | None = None, 
         lines=list(lines),
         section=section,
         column=max(parts, key=lambda k: len(parts[k])),
-        bbox=(min_x, min(l.y0 for l in main), max_x, max(l.y1 for l in main)),
+        bbox=(min_x, min(l.y0 for l in main), max_x, max(term_line.y1 if term_line else 0, max(l.y1 for l in main))),
         ocr_confidence=round(statistics.fmean(l.conf for l in lines), 3),
         ad_reference=ref,
         terminated=ref is not None or not ref_mode,
@@ -493,13 +511,44 @@ def _phones(text: str) -> list[str]:
 def extract_jobs(ad: Advertisement, published: date) -> list[JobDraft]:
     """Extract one JobDraft per distinct role mentioned in the ad. Missing fields stay None."""
     text = ad.text
-    roles = _roles(text) or [None]
+    # Normalize OCR numeral confusions & separate attached words
+    norm_text = re.sub(r'([a-z])([A-Z])', r'\1 \2', text)
+    norm_text = re.sub(r'(\d+)[\.,]([Oo]{3})\b', r'\1,000', norm_text)
+    norm_text = re.sub(r'(/[-–]?)(\w)', r'\1 \2', norm_text)
+    norm_text = re.sub(r'(\d+)\s*[/]\s*[-–]', r'\1/-', norm_text)
+    norm_text = re.sub(r'(salary|stipend|pay)\s*\n\s*', r'\1 ', norm_text, flags=re.I)
+
+    roles = _roles(norm_text) or _roles(text) or [None]
     employer = _clean_employer(m.group(1)) if (m := EMPLOYER_RE.search(text)) else None
-    place = _PLACE_RE.search(text)
+    place = _PLACE_RE.search(norm_text) or _PLACE_RE.search(text)
     quals = list(dict.fromkeys(_clean(q.group(0)) for q in
-                               [*QUALIFICATION_RE.finditer(text), *QUALIFICATION_CAPS_RE.finditer(text)]))
-    exp = _clean(m.group(0)) if (m := EXPERIENCE_RE.search(text)) else None
-    salary = _clean(m.group(0)) if (m := SALARY_RE.search(text)) else None
+                               [*QUALIFICATION_RE.finditer(norm_text), *QUALIFICATION_CAPS_RE.finditer(norm_text)]))
+    exp = _clean(m.group(0)) if (m := EXPERIENCE_RE.search(norm_text)) else None
+
+    # Salary extraction with number cleanup
+    raw_salary = None
+    if m := (SALARY_RE.search(norm_text) or SALARY_RE.search(text)):
+        s_val = m.group(0).strip()
+        s_val = re.sub(r'(\d+)[,\.]([Oo]{3})\b', r'\1,000', s_val)
+        s_val = re.sub(r'(?<=\d)[Oo]+(?=\d|/|\b)', lambda mo: '0' * len(mo.group(0)), s_val)
+        raw_salary = _clean(s_val)
+
+    # Detect housing & meals perks common in Goa newspaper ads
+    perks = []
+    if re.search(r'\b(?:with\s+)?food\s+(?:and|&)\s+accommodation\b|\bwith\s+food\s+and\s+stay\b|\bfood\s+and\s+room\b', norm_text, re.I):
+        perks.append("Food & Accommodation provided")
+    elif re.search(r'\b(?:free\s+)?accommodation\s+provided\b|\broom\s+provided\b', norm_text, re.I):
+        perks.append("Accommodation provided")
+    elif re.search(r'\b(?:free\s+)?food\s+provided\b|\bmeals?\s+provided\b', norm_text, re.I):
+        perks.append("Food provided")
+
+    salary = raw_salary
+    if salary and perks:
+        if not any(p.lower() in salary.lower() for p in perks):
+            salary = f"{salary} ({', '.join(perks)})"
+    elif not salary and perks:
+        salary = ", ".join(perks)
+
     phones = _phones(text)
     emails = list(dict.fromkeys(re.sub(r"\s", "", e).lower() for e in EMAIL_RE.findall(text)))
     deadline = _deadline(text, published)

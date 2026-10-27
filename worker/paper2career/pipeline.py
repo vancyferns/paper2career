@@ -283,7 +283,7 @@ class Ingestor:
             draft = next((d for d in drafts if d.role_index == role_idx), drafts[0])
 
             updates = {}
-            for f in ("description", "contact_phones", "contact_emails", "employer",
+            for f in ("title", "description", "contact_phones", "contact_emails", "employer",
                       "location", "qualification", "experience", "salary_text",
                       "application_instructions", "deadline"):
                 if job.get(f) != getattr(draft, f):
@@ -351,6 +351,40 @@ class Ingestor:
             except Exception as exc:  # noqa: BLE001 - evidence image is helpful but not essential
                 log.warning("Could not save crop for %s: %s", appearance_id, exc)
                 crop_id = None
+
+        # Neural crop refinement on the ad crop for maximum field accuracy
+        if image_path is not None and width:
+            try:
+                from rapidocr_onnxruntime import RapidOCR
+                import numpy as np
+                engine = RapidOCR()
+                with Image.open(image_path) as page_img:
+                    pad = 15
+                    x0, y0, x1, y1 = ad.bbox
+                    crop_box = (max(0, int(x0) - pad), max(0, int(y0) - pad), min(page_img.width, int(x1) + pad), min(page_img.height, int(y1) + pad))
+                    res, _ = engine(np.asarray(page_img.crop(crop_box)))
+                    if res:
+                        n_text = "\n".join(r[1] for r in res)
+                        n_ad = Advertisement(text=n_text, lines=[], section=ad.section, column=ad.column, bbox=ad.bbox, ocr_confidence=0.98, ad_reference=ad.ad_reference)
+                        n_drafts = extract.extract_jobs(n_ad, edition.publication_date)
+                        if n_drafts:
+                            target_d = next((d for d in n_drafts if d.role_index == draft.role_index), n_drafts[0])
+                            if target_d.location and not draft.location:
+                                draft.location = target_d.location
+                            if target_d.salary_text and (not draft.salary_text or len(target_d.salary_text) > len(draft.salary_text or "")):
+                                draft.salary_text = target_d.salary_text
+                            if target_d.qualification and not draft.qualification:
+                                draft.qualification = target_d.qualification
+                            if target_d.experience and not draft.experience:
+                                draft.experience = target_d.experience
+                            if len(target_d.contact_phones) > len(draft.contact_phones):
+                                draft.contact_phones = target_d.contact_phones
+                            if len(target_d.title) > len(draft.title) and draft.title.lower() in target_d.title.lower():
+                                draft.title = target_d.title
+                            ad.text = n_text
+                            draft.description = target_d.description
+            except Exception as exc:
+                log.debug("Neural crop refinement skipped: %s", exc)
 
         pub = edition.publication_date.isoformat()
         exact = next((self.repo.get("jobs", a["job_id"]) for a in self.repo.find("job_appearances", "content_hash", content_hash)
@@ -429,7 +463,7 @@ class Ingestor:
 
         if match.needs_review:
             if should_publish:
-                self.repo.create("job_revisions", "rv_" + appearance_id[3:], {
+                self.repo.upsert("job_revisions", "rv_" + appearance_id[3:], {
                     "job_id": job_id, "appearance_id": appearance_id, "publication_date": pub,
                     "match_type": match_kind, "match_score": match.score, "status": "accepted",
                     "changed_fields": list(match.changes),
@@ -439,7 +473,7 @@ class Ingestor:
                 })
             else:
                 stats.revisions_flagged += 1
-                self.repo.create("job_revisions", "rv_" + appearance_id[3:], {
+                self.repo.upsert("job_revisions", "rv_" + appearance_id[3:], {
                     "job_id": job_id, "appearance_id": appearance_id, "publication_date": pub,
                     "match_type": match_kind, "match_score": match.score, "status": "pending",
                     "changed_fields": list(match.changes),
@@ -450,15 +484,15 @@ class Ingestor:
         return crop_id
 
 
-def _crop_jpeg(path: Path, bbox, pad: int = 18, max_width: int = 900) -> bytes:
+def _crop_jpeg(path: Path, bbox, pad_x: int = 24, pad_y: int = 36, max_width: int = 900) -> bytes:
     with Image.open(path) as img:
         x0, y0, x1, y1 = bbox
-        box = (max(0, int(x0) - pad), max(0, int(y0) - pad), min(img.width, int(x1) + pad), min(img.height, int(y1) + pad))
+        box = (max(0, int(x0) - pad_x), max(0, int(y0) - pad_y), min(img.width, int(x1) + pad_x), min(img.height, int(y1) + pad_y))
         crop = img.convert("RGB").crop(box)
     if crop.width > max_width:
         crop = crop.resize((max_width, round(crop.height * max_width / crop.width)))
     buf = io.BytesIO()
-    crop.save(buf, "JPEG", quality=82, optimize=True)
+    crop.save(buf, "JPEG", quality=85, optimize=True)
     return buf.getvalue()
 
 

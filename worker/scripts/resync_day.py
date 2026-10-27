@@ -61,6 +61,8 @@ def resync_jobs_for_date(target_date_str: str, dry_run: bool = False) -> dict:
 
         # Detect corrupted or mismatched fields
         updates = {}
+        if job.get("title") != draft.title:
+            updates["title"] = draft.title[:255]
         if job.get("description") != draft.description:
             updates["description"] = draft.description[:10000]
 

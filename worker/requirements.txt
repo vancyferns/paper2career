@@ -9,5 +9,5 @@ rapidfuzz>=3.9
 python-dateutil>=2.9
 appwrite>=13.0
 pytest>=8.0
-# Optional pip-only OCR engine (used when Tesseract isn't installed, e.g. on a Windows laptop):
-#   pip install rapidocr onnxruntime
+rapidocr-onnxruntime>=1.2.0
+onnxruntime>=1.17.0
