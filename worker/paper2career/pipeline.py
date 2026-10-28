@@ -352,40 +352,6 @@ class Ingestor:
                 log.warning("Could not save crop for %s: %s", appearance_id, exc)
                 crop_id = None
 
-        # Neural crop refinement on the ad crop for maximum field accuracy
-        if image_path is not None and width:
-            try:
-                from rapidocr_onnxruntime import RapidOCR
-                import numpy as np
-                engine = RapidOCR()
-                with Image.open(image_path) as page_img:
-                    pad = 15
-                    x0, y0, x1, y1 = ad.bbox
-                    crop_box = (max(0, int(x0) - pad), max(0, int(y0) - pad), min(page_img.width, int(x1) + pad), min(page_img.height, int(y1) + pad))
-                    res, _ = engine(np.asarray(page_img.crop(crop_box)))
-                    if res:
-                        n_text = "\n".join(r[1] for r in res)
-                        n_ad = Advertisement(text=n_text, lines=[], section=ad.section, column=ad.column, bbox=ad.bbox, ocr_confidence=0.98, ad_reference=ad.ad_reference)
-                        n_drafts = extract.extract_jobs(n_ad, edition.publication_date)
-                        if n_drafts:
-                            target_d = next((d for d in n_drafts if d.role_index == draft.role_index), n_drafts[0])
-                            if target_d.location and not draft.location:
-                                draft.location = target_d.location
-                            if target_d.salary_text and (not draft.salary_text or len(target_d.salary_text) > len(draft.salary_text or "")):
-                                draft.salary_text = target_d.salary_text
-                            if target_d.qualification and not draft.qualification:
-                                draft.qualification = target_d.qualification
-                            if target_d.experience and not draft.experience:
-                                draft.experience = target_d.experience
-                            if len(target_d.contact_phones) > len(draft.contact_phones):
-                                draft.contact_phones = target_d.contact_phones
-                            if len(target_d.title) > len(draft.title) and draft.title.lower() in target_d.title.lower():
-                                draft.title = target_d.title
-                            ad.text = n_text
-                            draft.description = target_d.description
-            except Exception as exc:
-                log.debug("Neural crop refinement skipped: %s", exc)
-
         pub = edition.publication_date.isoformat()
         exact = next((self.repo.get("jobs", a["job_id"]) for a in self.repo.find("job_appearances", "content_hash", content_hash)
                       if a.get("role_index", 0) == draft.role_index), None)
