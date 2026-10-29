@@ -1,4 +1,4 @@
-﻿"""Daily ingestion: discover -> acquire -> OCR -> classify -> extract -> match -> store -> log."""
+"""Daily ingestion: discover -> acquire -> OCR -> classify -> extract -> match -> store -> log."""
 from __future__ import annotations
 
 import hashlib
@@ -149,8 +149,10 @@ class Ingestor:
 
     def prune_older_than(self, days: int = 7) -> dict:
         """Delete ad crops and appearances older than `days` to save storage in Appwrite."""
-        cutoff = (datetime.now(timezone.utc) - timedelta(days=days)).date().isoformat()
-        log.info("Pruning records older than %d days (cutoff: %s)", days, cutoff)
+        # Retention window: keep today and preceding (days - 1) days.
+        # Any record on or before cutoff date is pruned.
+        cutoff = (datetime.now(IST).date() - timedelta(days=days)).isoformat()
+        log.info("Pruning records older than %d days (cutoff: <= %s)", days, cutoff)
 
         pruned_crops = 0
         pruned_appearances = 0
@@ -158,29 +160,34 @@ class Ingestor:
         pruned_editions = 0
 
         # 1. Prune job appearances and their ad crops from storage
-        for a in self.repo.all("job_appearances", limit=5000):
-            if (a.get("publication_date") or "") < cutoff:
-                crop_id = a.get("crop_file_id")
-                if crop_id:
-                    try:
-                        self.repo.delete_crop(crop_id)
-                        pruned_crops += 1
-                    except Exception as exc:
-                        log.debug("Crop delete skipped for %s: %s", crop_id, exc)
-                self.repo.delete("job_appearances", a["$id"])
-                pruned_appearances += 1
+        old_appearances = self.repo.find_before_or_on("job_appearances", "publication_date", cutoff, limit=5000)
+        for a in old_appearances:
+            crop_id = a.get("crop_file_id")
+            if crop_id:
+                try:
+                    self.repo.delete_crop(crop_id)
+                    pruned_crops += 1
+                except Exception as exc:
+                    log.debug("Crop delete skipped for %s: %s", crop_id, exc)
+            self.repo.delete("job_appearances", a["$id"])
+            pruned_appearances += 1
 
-        # 2. Prune jobs whose last appearance was before cutoff
-        for j in self.repo.all("jobs", limit=5000):
-            if (j.get("last_seen_at") or "") < cutoff:
-                self.repo.delete("jobs", j["$id"])
-                pruned_jobs += 1
+        # 2. Prune jobs whose last appearance was before or on cutoff
+        old_jobs = self.repo.find_before_or_on("jobs", "last_seen_at", cutoff, limit=5000)
+        for j in old_jobs:
+            self.repo.delete("jobs", j["$id"])
+            pruned_jobs += 1
 
         # 3. Prune old editions
         for e in self.repo.all("editions", limit=1000):
-            if (e.get("publication_date") or "") < cutoff:
-                self.repo.delete("editions", e["$id"])
-                pruned_editions += 1
+            ed_date = e.get("publication_date")
+            if not ed_date and e.get("$id", "").startswith("ed_"):
+                parts = e["$id"].split("-", 1)
+                if len(parts) == 2 and len(parts[1]) == 10:
+                    ed_date = parts[1]
+            if ed_date and ed_date <= cutoff:
+                if self.repo.delete("editions", e["$id"]):
+                    pruned_editions += 1
 
         res = {
             "cutoff": cutoff,

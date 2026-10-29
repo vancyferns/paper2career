@@ -22,6 +22,7 @@ class Repository:
     def update(self, table: str, row_id: str, data: dict, public: bool | None = None) -> dict: ...
     def find(self, table: str, field: str, value: Any, limit: int = 100) -> list[dict]: ...
     def find_since(self, table: str, field: str, since: str, limit: int = 1000) -> list[dict]: ...
+    def find_before_or_on(self, table: str, field: str, before: str, limit: int = 5000) -> list[dict]: ...
     def all(self, table: str, limit: int = 5000) -> list[dict]: ...
     def delete(self, table: str, row_id: str) -> bool: ...
     def save_crop(self, file_id: str, jpeg: bytes, public: bool = False) -> str | None:
@@ -82,6 +83,9 @@ class LocalRepository(Repository):
 
     def find_since(self, table, field, since, limit=1000):
         return [dict(r) for r in self.data[table].values() if (r.get(field) or "") >= since][:limit]
+
+    def find_before_or_on(self, table, field, before, limit=5000):
+        return [dict(r) for r in self.data[table].values() if (r.get(field) or "") and (r.get(field) or "") <= before][:limit]
 
     def all(self, table, limit=5000):
         return [dict(r) for r in list(self.data[table].values())[:limit]]
@@ -196,6 +200,11 @@ class AppwriteRepository(Repository):
         from appwrite.query import Query
 
         return self._list(table, [Query.greater_than_equal(field, since)], limit)
+
+    def find_before_or_on(self, table, field, before, limit=5000):
+        from appwrite.query import Query
+
+        return self._list(table, [Query.less_than_equal(field, before)], limit)
 
     def all(self, table, limit=5000):
         return self._list(table, [], limit)
