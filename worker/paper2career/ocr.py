@@ -121,24 +121,25 @@ def detect_columns(image: Image.Image) -> list[tuple[int, int]]:
 
 
 def _ocr_tesseract(image: Image.Image) -> list[OcrLine]:
-    # Pre-segment into columns if multiple columns exist on broadsheet/newspaper page
-    columns = detect_columns(image)
-    if len(columns) >= 2:
-        log.info("Detected %d newspaper columns; processing column-by-column with Tesseract", len(columns))
-        all_lines = []
-        for x0, x1 in columns:
-            strip = image.crop((x0, 0, x1, image.height))
-            strip_lines = _ocr_tesseract_strip(strip, config="--psm 4")
-            for ln in strip_lines:
-                all_lines.append(OcrLine(
-                    ln.text,
-                    ln.x0 + x0,
-                    ln.y0,
-                    ln.x1 + x0,
-                    ln.y1,
-                    ln.conf,
-                ))
-        return all_lines
+    # Only pre-segment into columns on broadsheet / large pages (>= 2500px wide)
+    if image.width >= 2500:
+        columns = detect_columns(image)
+        if len(columns) >= 2:
+            log.info("Detected %d newspaper columns; processing column-by-column with Tesseract", len(columns))
+            all_lines = []
+            for x0, x1 in columns:
+                strip = image.crop((x0, 0, x1, image.height))
+                strip_lines = _ocr_tesseract_strip(strip, config="--psm 4")
+                for ln in strip_lines:
+                    all_lines.append(OcrLine(
+                        ln.text,
+                        ln.x0 + x0,
+                        ln.y0,
+                        ln.x1 + x0,
+                        ln.y1,
+                        ln.conf,
+                    ))
+            return all_lines
 
     return _ocr_tesseract_strip(image, config="--psm 3")
 

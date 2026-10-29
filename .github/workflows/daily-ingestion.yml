@@ -30,7 +30,7 @@ concurrency:
 jobs:
   ingest:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 25
     defaults:
       run:
         working-directory: worker
@@ -51,12 +51,16 @@ jobs:
 
       - name: Set up Cloudflare WARP
         uses: fscarmen/warp-on-actions@v1.4
+        continue-on-error: true
+        timeout-minutes: 3
         with:
           stack: dual
-          mode: wireguard
+          mode: client
 
       - name: Verify WARP egress connection
-        run: curl -s https://www.cloudflare.com/cdn-cgi/trace
+        continue-on-error: true
+        timeout-minutes: 1
+        run: curl -s https://www.cloudflare.com/cdn-cgi/trace || true
 
       - name: Restore downloaded pages and OCR cache
         uses: actions/cache@v4
@@ -69,6 +73,7 @@ jobs:
         run: python -m pytest -q
 
       - name: Run ingestion
+        timeout-minutes: 15
         env:
           APPWRITE_ENDPOINT: ${{ secrets.APPWRITE_ENDPOINT }}
           APPWRITE_PROJECT_ID: ${{ secrets.APPWRITE_PROJECT_ID }}
@@ -76,6 +81,7 @@ jobs:
           APPWRITE_DATABASE_ID: "6adbb053000fa129e183"
           AUTO_PUBLISH: "true"
           OCR_ENGINE: tesseract
+          OMP_THREAD_LIMIT: "2"
           INPUT_DATE: ${{ inputs.date }}
           INPUT_PAGES: ${{ inputs.pages }}
           TRIGGER: ${{ github.event_name }}
@@ -88,8 +94,9 @@ jobs:
           python -m paper2career run --trigger "$TRIGGER" "${ARGS[@]}"
 
       - name: Auto-verify & resync daily job details against clippings
+        timeout-minutes: 5
         run: |
-          TARGET="${INPUT_DATE:-$(date +%Y-%m-%d)}"
+          TARGET="${INPUT_DATE:-$(TZ='Asia/Kolkata' date +%Y-%m-%d)}"
           PYTHONPATH=. python scripts/resync_day.py "$TARGET" || true
 
       - name: Prune page cache older than 7 days
