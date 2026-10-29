@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { listPublishedJobs } from '../api.js';
+import { listPublishedJobs, getCachedPublishedJobs } from '../api.js';
 import { daysBetween, fmtDate, listingStatus, cleanPhone, phoneDialUrl, today } from '../format.js';
 import { CATEGORIES, matchesCategory } from '../categories.js';
 import { scoreJob } from '../search.js';
-import { toggleSaved, useSaved, visit } from '../store.js';
+import { toggleSaved, useSaved, visit, getFeedState, saveFeedState, resetFeedFilters } from '../store.js';
 import { spotlight, useCountUp, useReveal, useRotating } from '../motion.js';
 import {
   PhoneIcon, WhatsAppIcon, MailIcon, SearchIcon, SlidersIcon, XIcon, PinIcon, CapIcon, WalletIcon, HeartIcon,
@@ -15,20 +15,45 @@ const PAGE = 24;
 const ROTATING = ['hotel jobs', 'driver jobs', 'office jobs', 'teaching jobs', 'sales jobs', 'nursing jobs'];
 
 export default function Feed({ savedOnly = false }) {
-  const [jobs, setJobs] = useState(null);
+  const savedState = useMemo(() => (!savedOnly ? getFeedState() : {}), [savedOnly]);
+  const [jobs, setJobs] = useState(() => getCachedPublishedJobs());
   const [error, setError] = useState(null);
-  const [q, setQ] = useState('');
-  const [location, setLocation] = useState('');
-  const [deadline, setDeadline] = useState('any');
-  const [sort, setSort] = useState('recent');
-  const [dateRange, setDateRange] = useState('today');
-  const [category, setCategory] = useState('');
-  const [showFilters, setShowFilters] = useState(false);
-  const [limit, setLimit] = useState(PAGE);
+  const [q, setQ] = useState(savedState.q || '');
+  const [location, setLocation] = useState(savedState.location || '');
+  const [deadline, setDeadline] = useState(savedState.deadline || 'any');
+  const [sort, setSort] = useState(savedState.sort || 'recent');
+  const [dateRange, setDateRange] = useState(savedState.dateRange || 'today');
+  const [category, setCategory] = useState(savedState.category || '');
+  const [showFilters, setShowFilters] = useState(savedState.showFilters || false);
+  const [limit, setLimit] = useState(savedState.limit || PAGE);
   const saved = useSaved();
 
   useEffect(() => {
     listPublishedJobs().then(setJobs).catch((e) => setError(e.message));
+  }, []);
+
+  useEffect(() => {
+    if (!savedOnly) {
+      saveFeedState({ q, location, deadline, sort, dateRange, category, showFilters, limit });
+    }
+  }, [q, location, deadline, sort, dateRange, category, showFilters, limit, savedOnly]);
+
+  useEffect(() => {
+    if (savedOnly) return undefined;
+    const saveScroll = () => {
+      saveFeedState({ scrollY: window.scrollY });
+    };
+    window.addEventListener('scroll', saveScroll, { passive: true });
+    return () => window.removeEventListener('scroll', saveScroll);
+  }, [savedOnly]);
+
+  useEffect(() => {
+    if (!savedOnly && savedState.scrollY > 0) {
+      const timer = setTimeout(() => {
+        window.scrollTo({ top: savedState.scrollY, behavior: 'instant' });
+      }, 40);
+      return () => clearTimeout(timer);
+    }
   }, []);
 
   const latestDate = useMemo(() => {
@@ -65,6 +90,8 @@ export default function Feed({ savedOnly = false }) {
     setSort('recent');
     setDateRange('today');
     setCategory('');
+    setQ('');
+    if (!savedOnly) resetFeedFilters();
   };
 
   // Everything except the category, so the category dropdown can show counts for the current selection.

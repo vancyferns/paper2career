@@ -26,9 +26,18 @@ function useHashRoute() {
   const [route, setRoute] = useState(getRoute);
 
   useEffect(() => {
+    let lastRoute = getRoute();
     const on = () => {
-      setRoute(getRoute());
-      window.scrollTo(0, 0);
+      const nextRoute = getRoute();
+      setRoute(nextRoute);
+      // Only scroll to top when entering a detail/review/runs page from outside
+      // Never force scroll to (0,0) when navigating back to feed
+      if (nextRoute[0] && nextRoute[0] !== lastRoute[0]) {
+        if (nextRoute[0] === 'job' || nextRoute[0] === 'review' || nextRoute[0] === 'runs') {
+          window.scrollTo(0, 0);
+        }
+      }
+      lastRoute = nextRoute;
     };
     window.addEventListener('hashchange', on);
     window.addEventListener('popstate', on);

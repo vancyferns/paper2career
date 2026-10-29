@@ -78,3 +78,51 @@ export async function shareJob(job) {
     return null;
   }
 }
+
+// ------------------------------------------------------------------ feed search & filter preservation
+
+const FEED_STATE_KEY = 'p2c:feed_state';
+
+const defaultFeedState = {
+  q: '',
+  location: '',
+  deadline: 'any',
+  sort: 'recent',
+  dateRange: 'today',
+  category: '',
+  showFilters: false,
+  limit: 24,
+  scrollY: 0,
+};
+
+function readSession(key, fallback) {
+  try {
+    const v = sessionStorage.getItem(key);
+    return v ? JSON.parse(v) : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function writeSession(key, val) {
+  try {
+    sessionStorage.setItem(key, JSON.stringify(val));
+  } catch { /* storage unavailable */ }
+}
+
+let _feedState = readSession(FEED_STATE_KEY, defaultFeedState);
+
+export function getFeedState() {
+  return _feedState;
+}
+
+export function saveFeedState(updates) {
+  _feedState = { ..._feedState, ...updates };
+  writeSession(FEED_STATE_KEY, _feedState);
+}
+
+export function resetFeedFilters() {
+  _feedState = { ...defaultFeedState, scrollY: 0 };
+  writeSession(FEED_STATE_KEY, _feedState);
+  return _feedState;
+}

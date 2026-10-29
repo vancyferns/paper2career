@@ -65,15 +65,40 @@ export function cropUrl(appearance) {
 
 // ------------------------------------------------------------------ public reads
 
-export async function listPublishedJobs() {
-  if (DEMO) {
-    const d = await demoData();
-    return d.jobs.filter((j) => j.review_status === 'published').sort(byDesc('last_seen_at'));
+let _cachedJobs = null;
+let _cachedJobsPromise = null;
+
+export function getCachedPublishedJobs() {
+  return _cachedJobs;
+}
+
+export async function listPublishedJobs(forceRefresh = false) {
+  if (!forceRefresh && _cachedJobs) {
+    return _cachedJobs;
   }
-  return listAll('jobs', [Query.equal('review_status', ['published']), Query.orderDesc('last_seen_at')]);
+  if (!forceRefresh && _cachedJobsPromise) {
+    return _cachedJobsPromise;
+  }
+  _cachedJobsPromise = (async () => {
+    let result;
+    if (DEMO) {
+      const d = await demoData();
+      result = d.jobs.filter((j) => j.review_status === 'published').sort(byDesc('last_seen_at'));
+    } else {
+      result = await listAll('jobs', [Query.equal('review_status', ['published']), Query.orderDesc('last_seen_at')]);
+    }
+    _cachedJobs = result;
+    _cachedJobsPromise = null;
+    return result;
+  })();
+  return _cachedJobsPromise;
 }
 
 export async function getJob(id) {
+  if (_cachedJobs) {
+    const found = _cachedJobs.find((j) => j.$id === id);
+    if (found) return found;
+  }
   if (DEMO) return (await demoData()).jobs.find((j) => j.$id === id) || null;
   try {
     return await tables.getRow({ databaseId, tableId: 'jobs', rowId: id });

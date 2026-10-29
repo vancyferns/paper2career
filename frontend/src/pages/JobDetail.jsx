@@ -116,9 +116,18 @@ export default function JobDetail({ id }) {
     </div>
   );
 
+  const handleBack = (e) => {
+    e.preventDefault();
+    if (window.history.length > 1) {
+      window.history.back();
+    } else {
+      window.location.hash = '#/';
+    }
+  };
+
   return (
     <article className="detail">
-      <a href="#/" className="back"><ArrowLeftIcon size={16} /> All jobs</a>
+      <a href="#/" className="back" onClick={handleBack}><ArrowLeftIcon size={16} /> All jobs</a>
 
       <div className="detail-grid">
         <div className="detail-main">
