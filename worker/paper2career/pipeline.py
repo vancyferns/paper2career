@@ -137,11 +137,13 @@ class Ingestor:
             })
         log.info("Run %s finished: %s %s", run_id, status, summary)
 
-        # Automatically prune crops & records older than RETENTION_DAYS (default: 7) to keep storage minimal
+        # Automatically prune crops & records older than RETENTION_DAYS (default: 7).
+        # RETENTION_DAYS=0 disables auto-prune (used in tests / manual runs).
         try:
             import os
             retention_days = int(os.environ.get("RETENTION_DAYS", "7"))
-            self.prune_older_than(days=retention_days)
+            if retention_days > 0:
+                self.prune_older_than(days=retention_days)
         except Exception as exc:
             log.warning("Auto-prune failed: %s", exc)
 

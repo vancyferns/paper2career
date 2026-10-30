@@ -73,6 +73,8 @@ def setup(tmp_path, monkeypatch):
     monkeypatch.setattr(pipeline, "_page_size", lambda path: (3000, 4000))
     monkeypatch.setattr(pipeline, "looks_like_classifieds", lambda path: True)
     object.__setattr__(pipeline.settings, "auto_publish", False)
+    # Disable auto-prune so synthetic historical dates are not deleted mid-test
+    monkeypatch.setenv("RETENTION_DAYS", "0")
     repo = LocalRepository(tmp_path / "db.json")
     return repo, editions
 
