@@ -63,31 +63,98 @@ export function cropUrl(appearance) {
   return storage.getFileView({ bucketId: CROPS_BUCKET, fileId: id });
 }
 
+// ------------------------------------------------------------------ localStorage job cache
+
+const JOBS_CACHE_KEY = 'p2c:jobs_cache';
+const CACHE_TTL_MS = 4 * 60 * 60 * 1000; // 4 hours
+
+function todayIST() {
+  // Returns 'YYYY-MM-DD' in IST (UTC+5:30)
+  const now = new Date(Date.now() + 5.5 * 60 * 60 * 1000);
+  return now.toISOString().split('T')[0];
+}
+
+function readJobsCache() {
+  try {
+    const raw = localStorage.getItem(JOBS_CACHE_KEY);
+    if (!raw) return null;
+    const { jobs, fetchedAt, fetchedDate } = JSON.parse(raw);
+    // Stale if: older than TTL, or fetched on a different calendar day (new edition out)
+    if (Date.now() - fetchedAt > CACHE_TTL_MS) return null;
+    if (fetchedDate !== todayIST()) return null;
+    return jobs;
+  } catch {
+    return null;
+  }
+}
+
+function writeJobsCache(jobs) {
+  try {
+    localStorage.setItem(
+      JOBS_CACHE_KEY,
+      JSON.stringify({ jobs, fetchedAt: Date.now(), fetchedDate: todayIST() }),
+    );
+  } catch { /* storage full or blocked — silently ignore */ }
+}
+
+export function clearJobsCache() {
+  try { localStorage.removeItem(JOBS_CACHE_KEY); } catch { /* ignore */ }
+}
+
 // ------------------------------------------------------------------ public reads
 
-let _cachedJobs = null;
+let _cachedJobs = null;      // in-memory mirror of the localStorage cache
 let _cachedJobsPromise = null;
 
+/** Synchronous read used by Feed to pre-populate state before the async fetch resolves. */
 export function getCachedPublishedJobs() {
+  // Try in-memory first, then localStorage
+  if (_cachedJobs) return _cachedJobs;
+  const lsJobs = readJobsCache();
+  if (lsJobs) { _cachedJobs = lsJobs; }
   return _cachedJobs;
 }
 
+/**
+ * Fetch all published jobs.
+ * Strategy (non-DEMO):
+ *   1. Return localStorage cache if fresh (same day + < 4 h old).
+ *   2. Otherwise fetch ALL published jobs from Appwrite in one paginated call,
+ *      write to localStorage, then return.
+ * All filtering (search / location / date range / category) is done locally in Feed.jsx —
+ * zero extra Appwrite reads per interaction.
+ */
 export async function listPublishedJobs(forceRefresh = false) {
-  if (!forceRefresh && _cachedJobs) {
-    return _cachedJobs;
+  // In-memory hit
+  if (!forceRefresh && _cachedJobs) return _cachedJobs;
+
+  // localStorage hit
+  if (!forceRefresh) {
+    const lsJobs = readJobsCache();
+    if (lsJobs) {
+      _cachedJobs = lsJobs;
+      return _cachedJobs;
+    }
   }
-  if (!forceRefresh && _cachedJobsPromise) {
-    return _cachedJobsPromise;
-  }
+
+  // De-duplicate concurrent fetches
+  if (!forceRefresh && _cachedJobsPromise) return _cachedJobsPromise;
+
   _cachedJobsPromise = (async () => {
     let result;
     if (DEMO) {
       const d = await demoData();
       result = d.jobs.filter((j) => j.review_status === 'published').sort(byDesc('last_seen_at'));
     } else {
-      result = await listAll('jobs', [Query.equal('review_status', ['published']), Query.orderDesc('last_seen_at')]);
+      // Single paginated fetch — all published jobs, newest first.
+      // Feed.jsx filters by date / location / category / search locally.
+      result = await listAll('jobs', [
+        Query.equal('review_status', ['published']),
+        Query.orderDesc('last_seen_at'),
+      ]);
     }
     _cachedJobs = result;
+    if (!DEMO) writeJobsCache(result);
     _cachedJobsPromise = null;
     return result;
   })();
@@ -95,11 +162,14 @@ export async function listPublishedJobs(forceRefresh = false) {
 }
 
 export async function getJob(id) {
-  if (_cachedJobs) {
-    const found = _cachedJobs.find((j) => j.$id === id);
+  // Always check cache first (in-memory or localStorage) — avoids individual row fetches entirely
+  const cached = _cachedJobs || readJobsCache();
+  if (cached) {
+    const found = cached.find((j) => j.$id === id);
     if (found) return found;
   }
   if (DEMO) return (await demoData()).jobs.find((j) => j.$id === id) || null;
+  // Fallback: the job may not be published (reviewer flow) — fetch individually
   try {
     return await tables.getRow({ databaseId, tableId: 'jobs', rowId: id });
   } catch (e) {

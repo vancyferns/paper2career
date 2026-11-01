@@ -82,6 +82,7 @@ jobs:
           AUTO_PUBLISH: "true"
           OCR_ENGINE: tesseract
           OMP_THREAD_LIMIT: "2"
+          RETENTION_DAYS: "2"
           INPUT_DATE: ${{ inputs.date }}
           INPUT_PAGES: ${{ inputs.pages }}
           TRIGGER: ${{ github.event_name }}

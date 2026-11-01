@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 import sys
-from datetime import date, datetime
+from datetime import date
 from pathlib import Path
 
 from dateutil.parser import parse as parse_date
@@ -20,9 +20,32 @@ def resync_jobs_for_date(target_date_str: str, dry_run: bool = False) -> dict:
     target_date = parse_date(target_date_str).date() if isinstance(target_date_str, str) else target_date_str
     iso_date = target_date.isoformat()
 
-    log.info("Scanning all job appearances for %s...", iso_date)
+    log.info("Scanning appearances for %s...", iso_date)
     appearances = repo.find("job_appearances", "publication_date", iso_date, limit=2000)
     log.info("Found %d appearances for %s", len(appearances), iso_date)
+
+    if not appearances:
+        log.info("Nothing to resync.")
+        return {"target_date": iso_date, "appearances_checked": 0, "unique_jobs_checked": 0, "jobs_fixed": 0}
+
+    # ── Batch-load all relevant jobs in ONE query (find_since covers the date window) ──
+    # Build a lookup dict: job_id -> job row
+    job_ids_needed = {a["job_id"] for a in appearances if a.get("job_id")}
+    log.info("Batch-loading %d unique jobs...", len(job_ids_needed))
+    # Load all jobs seen on/after (today-2) to cover yesterday and today
+    all_jobs_rows = repo.find_since("jobs", "last_seen_at", iso_date, limit=2000)
+    # Also grab jobs first seen on this date (new ones) - already covered by find_since with same date
+    jobs_map = {j["$id"]: j for j in all_jobs_rows if j["$id"] in job_ids_needed}
+
+    # For any job_ids not found via find_since (e.g. repeat appearances from older editions),
+    # fall back individually only for the missing ones
+    missing_ids = job_ids_needed - set(jobs_map)
+    if missing_ids:
+        log.info("Fetching %d missed jobs individually...", len(missing_ids))
+        for jid in missing_ids:
+            j = repo.get("jobs", jid)
+            if j:
+                jobs_map[jid] = j
 
     updated_count = 0
     scanned_jobs = set()
@@ -32,7 +55,7 @@ def resync_jobs_for_date(target_date_str: str, dry_run: bool = False) -> dict:
         if not job_id:
             continue
 
-        job = repo.get("jobs", job_id)
+        job = jobs_map.get(job_id)
         if not job:
             continue
 
@@ -41,7 +64,6 @@ def resync_jobs_for_date(target_date_str: str, dry_run: bool = False) -> dict:
         if not text:
             continue
 
-        # Re-extract clean drafts directly from the appearance's actual text
         fake_line = OcrLine(text, 0, 0, 100, 20)
         ad = Advertisement(
             text=text,
@@ -59,41 +81,21 @@ def resync_jobs_for_date(target_date_str: str, dry_run: bool = False) -> dict:
         role_idx = app.get("role_index", 0)
         draft = next((d for d in drafts if d.role_index == role_idx), drafts[0])
 
-        # Detect corrupted or mismatched fields
         updates = {}
-        if job.get("title") != draft.title:
-            updates["title"] = draft.title[:255]
-        if job.get("description") != draft.description:
-            updates["description"] = draft.description[:10000]
+        for field in ("title", "description", "employer", "location",
+                       "qualification", "experience", "salary_text",
+                       "application_instructions", "deadline"):
+            draft_val = getattr(draft, field, None)
+            if job.get(field) != draft_val:
+                updates[field] = (draft_val[:255] if field == "title" else
+                                   draft_val[:10000] if field == "description" else
+                                   draft_val)
 
-        if job.get("contact_phones") != draft.contact_phones:
-            updates["contact_phones"] = draft.contact_phones
+        for field in ("contact_phones", "contact_emails"):
+            draft_val = getattr(draft, field, [])
+            if job.get(field) != draft_val:
+                updates[field] = draft_val
 
-        if job.get("contact_emails") != draft.contact_emails:
-            updates["contact_emails"] = draft.contact_emails
-
-        if job.get("employer") != draft.employer:
-            updates["employer"] = draft.employer
-
-        if job.get("location") != draft.location:
-            updates["location"] = draft.location
-
-        if job.get("qualification") != draft.qualification:
-            updates["qualification"] = draft.qualification
-
-        if job.get("experience") != draft.experience:
-            updates["experience"] = draft.experience
-
-        if job.get("salary_text") != draft.salary_text:
-            updates["salary_text"] = draft.salary_text
-
-        if job.get("application_instructions") != draft.application_instructions:
-            updates["application_instructions"] = draft.application_instructions
-
-        if job.get("deadline") != draft.deadline:
-            updates["deadline"] = draft.deadline
-
-        # Always update search_text
         search_tokens = " ".join(filter(None, [
             draft.title,
             draft.location or "",
@@ -107,6 +109,7 @@ def resync_jobs_for_date(target_date_str: str, dry_run: bool = False) -> dict:
             log.info("Fixing Job %s (%s): %s", job_id, job.get("title"), list(updates.keys()))
             if not dry_run:
                 repo.update("jobs", job_id, updates)
+                jobs_map[job_id] = {**job, **updates}  # keep local cache fresh
             updated_count += 1
 
     summary = {
@@ -120,5 +123,5 @@ def resync_jobs_for_date(target_date_str: str, dry_run: bool = False) -> dict:
 
 
 if __name__ == "__main__":
-    date_arg = sys.argv[1] if len(sys.argv) > 1 else "2026-10-26"
+    date_arg = sys.argv[1] if len(sys.argv) > 1 else "2026-11-01"
     resync_jobs_for_date(date_arg)
